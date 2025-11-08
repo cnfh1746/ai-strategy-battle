@@ -1,11 +1,22 @@
 /* AI策略对战 - 样式 */
 
 .ai-player-config {
-    border: 1px solid #444;
+    background: rgba(0, 0, 0, 0.2);
     padding: 10px;
     margin: 10px 0;
     border-radius: 5px;
-    background: #2a2a2a;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* 修复输入框文字颜色 */
+.ai-player-config input.text_pole,
+.ai-player-config select.text_pole {
+    color: var(--SmartThemeBodyColor) !important;
+    background-color: var(--black30a) !important;
+}
+
+.ai-player-config input.text_pole::placeholder {
+    color: var(--white50a) !important;
 }
 
 .ai-player-config h4 {

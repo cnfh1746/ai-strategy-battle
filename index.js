@@ -125,6 +125,11 @@ function bindEvents() {
     
     // 停止游戏
     $(document).on('click', '#stop_game', stopGame);
+    
+    // 拉取模型列表
+    for (let i = 1; i <= 6; i++) {
+        $(document).on('click', `#fetch_models_${i}`, () => fetchModels(i));
+    }
 }
 
 // 开始游戏
@@ -174,4 +179,123 @@ function stopGame() {
         gameCoordinator = null;
         toastr.info('游戏已停止', 'AI策略对战');
     }
+}
+
+// 拉取模型列表
+async function fetchModels(playerIndex) {
+    const apiType = $(`#player${playerIndex}_api_type`).val();
+    const apiUrl = $(`#player${playerIndex}_api_url`).val();
+    const apiKey = $(`#player${playerIndex}_api_key`).val();
+    
+    if (!apiKey) {
+        toastr.warning('请先填写API Key', 'AI策略对战');
+        return;
+    }
+    
+    try {
+        toastr.info('正在拉取模型列表...', 'AI策略对战');
+        
+        let url = apiUrl || getDefaultApiUrl(apiType);
+        if (!url.endsWith('/')) url += '/';
+        url += 'models';
+        
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        // 解析模型列表
+        let models = [];
+        if (data.data && Array.isArray(data.data)) {
+            models = data.data.map(m => m.id || m.name || m).filter(Boolean);
+        } else if (Array.isArray(data)) {
+            models = data.map(m => m.id || m.name || m).filter(Boolean);
+        }
+        
+        if (models.length === 0) {
+            toastr.warning('未找到可用模型', 'AI策略对战');
+            return;
+        }
+        
+        // 显示模型选择对话框
+        showModelSelector(playerIndex, models);
+        
+    } catch (error) {
+        console.error('[AI策略对战] 拉取模型失败:', error);
+        toastr.error(`拉取失败: ${error.message}`, 'AI策略对战');
+    }
+}
+
+// 获取默认API地址
+function getDefaultApiUrl(apiType) {
+    switch (apiType) {
+        case 'openai':
+            return 'https://api.openai.com/v1';
+        case 'claude':
+            return 'https://api.anthropic.com/v1';
+        default:
+            return '';
+    }
+}
+
+// 显示模型选择器
+function showModelSelector(playerIndex, models) {
+    const html = `
+        <div class="model-selector-popup" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+             background: var(--SmartThemeBlurTintColor); border: 2px solid var(--SmartThemeBorderColor); 
+             border-radius: 10px; padding: 20px; z-index: 9999; max-width: 500px; max-height: 70vh; overflow-y: auto;">
+            <h3 style="margin-top: 0;">选择模型 - 玩家 ${playerIndex}</h3>
+            <div style="max-height: 400px; overflow-y: auto; margin: 10px 0;">
+                ${models.map(model => `
+                    <div class="model-option" data-model="${model}" style="padding: 8px; margin: 5px 0; 
+                         background: var(--black30a); border-radius: 5px; cursor: pointer; 
+                         border: 1px solid transparent; transition: all 0.2s;">
+                        <span style="color: var(--SmartThemeBodyColor);">${model}</span>
+                    </div>
+                `).join('')}
+            </div>
+            <div style="text-align: right; margin-top: 15px;">
+                <button class="menu_button" id="close-model-selector">取消</button>
+            </div>
+        </div>
+        <div class="model-selector-overlay" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
+             background: rgba(0, 0, 0, 0.7); z-index: 9998;"></div>
+    `;
+    
+    $('body').append(html);
+    
+    // 选择模型
+    $('.model-option').on('click', function() {
+        const model = $(this).data('model');
+        $(`#player${playerIndex}_model`).val(model);
+        $('.model-selector-popup, .model-selector-overlay').remove();
+        toastr.success(`已选择模型: ${model}`, 'AI策略对战');
+    });
+    
+    // 鼠标悬停效果
+    $('.model-option').on('mouseenter', function() {
+        $(this).css({
+            'border-color': 'var(--SmartThemeQuoteColor)',
+            'background': 'var(--black50a)'
+        });
+    }).on('mouseleave', function() {
+        $(this).css({
+            'border-color': 'transparent',
+            'background': 'var(--black30a)'
+        });
+    });
+    
+    // 关闭对话框
+    $('#close-model-selector, .model-selector-overlay').on('click', function() {
+        $('.model-selector-popup, .model-selector-overlay').remove();
+    });
 }
