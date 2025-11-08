@@ -1,0 +1,189 @@
+/* AI策略对战 - 样式 */
+
+.ai-player-config {
+    border: 1px solid #444;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 5px;
+    background: #2a2a2a;
+}
+
+.ai-player-config h4 {
+    margin: 0 0 10px 0;
+    color: #4a9eff;
+}
+
+.ai-player-config input,
+.ai-player-config select {
+    margin: 5px 0;
+    width: 100%;
+}
+
+.setting-group {
+    margin: 15px 0;
+}
+
+.setting-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.setting-buttons {
+    margin: 20px 0;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* 游戏界面样式 */
+.game-container {
+    background: #1a1a1a;
+    border: 2px solid #444;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 20px 0;
+}
+
+.game-header {
+    text-align: center;
+    border-bottom: 2px solid #444;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.game-header h2 {
+    margin: 0;
+    color: #4a9eff;
+}
+
+#game-status {
+    margin-top: 5px;
+    color: #888;
+}
+
+.players-panel {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.player-card {
+    background: #2a2a2a;
+    border: 2px solid #444;
+    border-radius: 5px;
+    padding: 10px;
+    text-align: center;
+    transition: all 0.3s;
+}
+
+.player-card.alive {
+    border-color: #4a9eff;
+}
+
+.player-card.dead {
+    background: #1a1a1a;
+    border-color: #666;
+    opacity: 0.6;
+}
+
+.player-name {
+    font-weight: bold;
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+.player-status {
+    font-size: 12px;
+    color: #888;
+}
+
+.game-log {
+    background: #0a0a0a;
+    border: 1px solid #444;
+    border-radius: 5px;
+    padding: 10px;
+    height: 400px;
+    overflow-y: auto;
+    font-family: monospace;
+    font-size: 13px;
+}
+
+.log-entry {
+    margin: 5px 0;
+    padding: 3px 5px;
+    line-height: 1.5;
+}
+
+.log-entry.round-start {
+    color: #4a9eff;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.log-entry.thinking {
+    color: #888;
+    font-style: italic;
+}
+
+.log-entry.action {
+    color: #88ff88;
+}
+
+.log-entry.result {
+    color: #ffaa44;
+    font-weight: bold;
+}
+
+.log-entry.game-end {
+    color: #ff4444;
+    font-weight: bold;
+    font-size: 16px;
+    text-align: center;
+}
+
+.log-entry.tournament {
+    color: #ff88ff;
+    font-weight: bold;
+}
+
+.log-entry.match {
+    color: #ffff88;
+}
+
+.log-entry.match-result {
+    color: #88ffff;
+}
+
+.log-entry.champion {
+    color: #ffd700;
+    font-weight: bold;
+    font-size: 18px;
+    text-align: center;
+}
+
+.game-controls {
+    margin-top: 15px;
+    text-align: center;
+}
+
+#next_step {
+    padding: 10px 30px;
+    font-size: 16px;
+    background: #4a9eff;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+#next_step:hover {
+    background: #3a7edf;
+}
+
+#next_step:disabled {
+    background: #666;
+    cursor: not-allowed;
+}

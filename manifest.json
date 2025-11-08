@@ -1,0 +1,12 @@
+{
+    "name": "ai-strategy-battle",
+    "display_name": "AI策略对战",
+    "version": "1.0.0",
+    "author": "cnfh1746",
+    "description": "多AI智能体策略对战平台，支持狼人杀、资源争夺等多种游戏模式",
+    "minSillyTavernVersion": "1.10.0",
+    "requires": [],
+    "loading_order": 9999,
+    "js": "index.js",
+    "css": "style.css"
+}

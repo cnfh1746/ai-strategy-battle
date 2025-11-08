@@ -1,0 +1,132 @@
+<div class="inline-drawer">
+    <div class="inline-drawer-toggle inline-drawer-header">
+        <b>AI策略对战</b>
+        <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
+    </div>
+    <div class="inline-drawer-content">
+        
+        <h3>游戏设置</h3>
+        
+        <div class="setting-group">
+            <label>游戏类型</label>
+            <select id="game_type" class="text_pole">
+                <option value="werewolf">狼人杀</option>
+                <option value="resource-battle">资源争夺</option>
+                <option value="custom">自定义（世界书）</option>
+            </select>
+        </div>
+        
+        <div class="setting-group">
+            <label>执行模式</label>
+            <select id="execution_mode" class="text_pole">
+                <option value="sequential">顺序执行</option>
+                <option value="parallel">并行执行</option>
+                <option value="manual">手动控制</option>
+            </select>
+        </div>
+        
+        <div class="setting-group">
+            <label>比赛结构</label>
+            <select id="match_structure" class="text_pole">
+                <option value="single-game">单场游戏</option>
+                <option value="tournament">淘汰赛</option>
+            </select>
+        </div>
+        
+        <h3>AI玩家配置</h3>
+        
+        <!-- 玩家 1 -->
+        <div class="ai-player-config">
+            <h4>玩家 1</h4>
+            <input type="text" id="player1_name" placeholder="名称" value="AI-Alpha" class="text_pole">
+            <select id="player1_api_type" class="text_pole">
+                <option value="openai">OpenAI</option>
+                <option value="claude">Claude</option>
+                <option value="custom">自定义</option>
+            </select>
+            <input type="text" id="player1_api_url" placeholder="API URL (留空使用默认)" class="text_pole">
+            <input type="password" id="player1_api_key" placeholder="API Key" class="text_pole">
+            <input type="text" id="player1_model" placeholder="模型" value="gpt-4" class="text_pole">
+        </div>
+        
+        <!-- 玩家 2 -->
+        <div class="ai-player-config">
+            <h4>玩家 2</h4>
+            <input type="text" id="player2_name" placeholder="名称" value="AI-Beta" class="text_pole">
+            <select id="player2_api_type" class="text_pole">
+                <option value="openai">OpenAI</option>
+                <option value="claude">Claude</option>
+                <option value="custom">自定义</option>
+            </select>
+            <input type="text" id="player2_api_url" placeholder="API URL (留空使用默认)" class="text_pole">
+            <input type="password" id="player2_api_key" placeholder="API Key" class="text_pole">
+            <input type="text" id="player2_model" placeholder="模型" value="gpt-4" class="text_pole">
+        </div>
+        
+        <!-- 玩家 3 -->
+        <div class="ai-player-config">
+            <h4>玩家 3</h4>
+            <input type="text" id="player3_name" placeholder="名称" value="AI-Gamma" class="text_pole">
+            <select id="player3_api_type" class="text_pole">
+                <option value="openai">OpenAI</option>
+                <option value="claude">Claude</option>
+                <option value="custom">自定义</option>
+            </select>
+            <input type="text" id="player3_api_url" placeholder="API URL (留空使用默认)" class="text_pole">
+            <input type="password" id="player3_api_key" placeholder="API Key" class="text_pole">
+            <input type="text" id="player3_model" placeholder="模型" value="gpt-4" class="text_pole">
+        </div>
+        
+        <!-- 玩家 4 -->
+        <div class="ai-player-config">
+            <h4>玩家 4</h4>
+            <input type="text" id="player4_name" placeholder="名称" value="AI-Delta" class="text_pole">
+            <select id="player4_api_type" class="text_pole">
+                <option value="openai">OpenAI</option>
+                <option value="claude">Claude</option>
+                <option value="custom">自定义</option>
+            </select>
+            <input type="text" id="player4_api_url" placeholder="API URL (留空使用默认)" class="text_pole">
+            <input type="password" id="player4_api_key" placeholder="API Key" class="text_pole">
+            <input type="text" id="player4_model" placeholder="模型" value="gpt-4" class="text_pole">
+        </div>
+        
+        <!-- 玩家 5 -->
+        <div class="ai-player-config">
+            <h4>玩家 5</h4>
+            <input type="text" id="player5_name" placeholder="名称" value="AI-Echo" class="text_pole">
+            <select id="player5_api_type" class="text_pole">
+                <option value="openai">OpenAI</option>
+                <option value="claude">Claude</option>
+                <option value="custom">自定义</option>
+            </select>
+            <input type="text" id="player5_api_url" placeholder="API URL (留空使用默认)" class="text_pole">
+            <input type="password" id="player5_api_key" placeholder="API Key" class="text_pole">
+            <input type="text" id="player5_model" placeholder="模型" value="gpt-4" class="text_pole">
+        </div>
+        
+        <!-- 玩家 6 -->
+        <div class="ai-player-config">
+            <h4>玩家 6</h4>
+            <input type="text" id="player6_name" placeholder="名称" value="AI-Foxtrot" class="text_pole">
+            <select id="player6_api_type" class="text_pole">
+                <option value="openai">OpenAI</option>
+                <option value="claude">Claude</option>
+                <option value="custom">自定义</option>
+            </select>
+            <input type="text" id="player6_api_url" placeholder="API URL (留空使用默认)" class="text_pole">
+            <input type="password" id="player6_api_key" placeholder="API Key" class="text_pole">
+            <input type="text" id="player6_model" placeholder="模型" value="gpt-4" class="text_pole">
+        </div>
+        
+        <div class="setting-buttons">
+            <button id="save_battle_settings" class="menu_button">保存设置</button>
+            <button id="start_game" class="menu_button">开始游戏</button>
+            <button id="stop_game" class="menu_button">停止游戏</button>
+        </div>
+        
+        <h3>游戏界面</h3>
+        <div id="game_display"></div>
+        
+    </div>
+</div>
