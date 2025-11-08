@@ -1,11 +1,7 @@
-# 依赖
+# Node modules
 node_modules/
 
-# 日志
-*.log
-npm-debug.log*
-
-# 系统文件
+# OS files
 .DS_Store
 Thumbs.db
 
@@ -13,6 +9,9 @@ Thumbs.db
 .vscode/
 .idea/
 
-# 临时文件
+# Logs
+*.log
+
+# Temporary files
 *.tmp
-*.bak
+*.temp
