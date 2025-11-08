@@ -28,14 +28,34 @@
 
 ## 📦 安装
 
-1. 将整个 `ai-strategy-battle` 文件夹放到 SillyTavern 的扩展目录：
-   ```
-   SillyTavern/public/scripts/extensions/ai-strategy-battle/
-   ```
+### 方式一：直接下载（推荐）
 
-2. 重启 SillyTavern
+1. 下载本项目的所有文件
+2. 将整个 `ai-strategy-battle` 文件夹放到 SillyTavern 的第三方扩展目录：
+   ```
+   SillyTavern/public/scripts/extensions/third-party/ai-strategy-battle/
+   ```
+   （如果没有 `third-party` 文件夹，请手动创建）
 
-3. 在扩展管理中启用"AI策略对战"
+3. 重启 SillyTavern
+
+4. 在扩展设置页面找到 "🎮 AI策略对战" 面板
+
+### 方式二：Git克隆
+
+```bash
+cd SillyTavern/public/scripts/extensions/third-party/
+git clone https://github.com/cnfh1746/ai-strategy-battle.git
+```
+
+然后重启 SillyTavern 即可。
+
+### 验证安装
+
+打开 SillyTavern 后：
+1. 点击顶部的 "扩展" 按钮
+2. 在扩展设置页面应该能看到 "🎮 AI策略对战" 面板
+3. 点击展开面板，开始配置
 
 ## ⚙️ 配置
 
@@ -259,7 +279,7 @@ MIT License
 
 ## 👨‍💻 作者
 
-AXMU
+cnfh1746
 
 ---
 

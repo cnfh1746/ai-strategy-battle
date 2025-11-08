@@ -1,8 +1,10 @@
 // AI策略对战扩展 - 主入口
-import { GameCoordinator } from './src/core/game-coordinator.js';
-import { UIController } from './src/ui/ui-controller.js';
+import { extension_settings, getContext } from "../../../extensions.js";
+import { saveSettingsDebounced } from "../../../../script.js";
 
 const extensionName = 'ai-strategy-battle';
+const extensionFolderPath = `scripts/extensions/third-party/${extensionName}/`;
+
 let gameCoordinator = null;
 let uiController = null;
 
@@ -16,15 +18,51 @@ const defaultSettings = {
         { id: 'p5', name: 'AI-Echo', apiType: 'openai', apiUrl: '', apiKey: '', model: 'gpt-4' },
         { id: 'p6', name: 'AI-Foxtrot', apiType: 'openai', apiUrl: '', apiKey: '', model: 'gpt-4' }
     ],
-    executionMode: 'sequential', // sequential | parallel | manual
+    executionMode: 'sequential',
     gameType: 'werewolf',
-    matchStructure: 'single-game' // single-game | tournament | league
+    matchStructure: 'single-game'
 };
+
+// 动态导入模块
+async function loadModules() {
+    try {
+        const [gameCoordModule, uiModule] = await Promise.all([
+            import(`${extensionFolderPath}src/core/game-coordinator.js`),
+            import(`${extensionFolderPath}src/ui/ui-controller.js`)
+        ]);
+        return {
+            GameCoordinator: gameCoordModule.GameCoordinator,
+            UIController: uiModule.UIController
+        };
+    } catch (error) {
+        console.error('[AI策略对战] 模块加载失败:', error);
+        throw error;
+    }
+}
 
 // 注册扩展
 jQuery(async () => {
-    const settingsHtml = await $.get(`scripts/extensions/${extensionName}/settings.html`);
-    $('#extensions_settings2').append(settingsHtml);
+    const settingsHtml = await $.get(`${extensionFolderPath}settings.html`);
+    
+    // 创建扩展面板
+    const extensionPanel = $(`
+        <div class="inline-drawer">
+            <div class="inline-drawer-toggle inline-drawer-header">
+                <b>🎮 AI策略对战</b>
+                <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
+            </div>
+            <div class="inline-drawer-content">
+                ${settingsHtml}
+            </div>
+        </div>
+    `);
+    
+    $('#extensions_settings2').append(extensionPanel);
+    
+    // 初始化设置
+    if (!extension_settings[extensionName]) {
+        extension_settings[extensionName] = defaultSettings;
+    }
     
     // 加载设置
     loadSettings();
@@ -32,7 +70,7 @@ jQuery(async () => {
     // 绑定事件
     bindEvents();
     
-    console.log(`[${extensionName}] 扩展已加载`);
+    console.log('[AI策略对战] 扩展已加载');
 });
 
 // 加载设置
@@ -94,6 +132,9 @@ async function startGame() {
     const settings = extension_settings[extensionName];
     
     try {
+        // 动态加载模块
+        const { GameCoordinator, UIController } = await loadModules();
+        
         // 创建游戏协调器
         gameCoordinator = new GameCoordinator(settings);
         
@@ -101,20 +142,20 @@ async function startGame() {
         uiController = new UIController('#game_display');
         
         // 启动游戏
-        toastr.info('游戏启动中...');
+        toastr.info('游戏启动中...', 'AI策略对战');
         await gameCoordinator.start(uiController);
         
-        toastr.success('游戏已开始');
+        toastr.success('游戏已开始', 'AI策略对战');
     } catch (error) {
         console.error('[AI策略对战] 启动失败:', error);
-        toastr.error(`启动失败: ${error.message}`);
+        toastr.error(`启动失败: ${error.message}`, 'AI策略对战');
     }
 }
 
 // 下一步 (手动模式)
 async function nextStep() {
     if (!gameCoordinator) {
-        toastr.warning('请先开始游戏');
+        toastr.warning('请先开始游戏', 'AI策略对战');
         return;
     }
     
@@ -122,7 +163,7 @@ async function nextStep() {
         await gameCoordinator.nextStep();
     } catch (error) {
         console.error('[AI策略对战] 执行失败:', error);
-        toastr.error(`执行失败: ${error.message}`);
+        toastr.error(`执行失败: ${error.message}`, 'AI策略对战');
     }
 }
 
@@ -131,6 +172,6 @@ function stopGame() {
     if (gameCoordinator) {
         gameCoordinator.stop();
         gameCoordinator = null;
-        toastr.info('游戏已停止');
+        toastr.info('游戏已停止', 'AI策略对战');
     }
 }
