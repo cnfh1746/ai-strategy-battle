@@ -949,29 +949,45 @@ async function startGame() {
                     if (!config || !config.apiKey) {
                         throw new Error(`玩家 ${playerId} API未配置`);
                     }
-                    
-                    const apiUrl = (config.apiUrl || 'https://api.openai.com/v1').replace(/\/$/, '') + '/chat/completions';
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${config.apiKey}`
-                        },
-                        body: JSON.stringify({
-                            model: config.model,
-                            messages: [{ role: 'user', content: prompt }],
-                            temperature: 0.7,
-                            max_tokens: 1500
-                        })
-                    });
-                    
-                    if (!response.ok) {
-                        const errorText = await response.text();
-                        throw new Error(`API错误 ${response.status}: ${errorText}`);
+
+                    // ⭐ 新增：显示"AI思考中"提示
+                    if (window.addPublicMessage) {
+                        window.addPublicMessage('⏳ 系统', `${config.name} 正在思考...`);
                     }
                     
-                    const data = await response.json();
-                    return data.choices[0].message.content;
+                    const apiUrl = (config.apiUrl || 'https://api.openai.com/v1').replace(/\/$/, '') + '/chat/completions';
+                    
+                    try {
+                        const response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${config.apiKey}`
+                            },
+                            body: JSON.stringify({
+                                model: config.model,
+                                messages: [{ role: 'user', content: prompt }],
+                                temperature: 0.7,
+                                max_tokens: 1500
+                            })
+                        });
+                        
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            throw new Error(`API错误 ${response.status}: ${errorText}`);
+                        }
+                        
+                        const data = await response.json();
+                        return data.choices[0].message.content;
+
+                    } catch (error) {
+                        // ⭐ 新增：在API调用失败时显示错误信息
+                        if (window.addPublicMessage) {
+                            window.addPublicMessage('❌ 系统', `${config.name} 响应失败`);
+                        }
+                        // 重新抛出错误，让上层逻辑知道
+                        throw error;
+                    }
                 }
             );
         } else {

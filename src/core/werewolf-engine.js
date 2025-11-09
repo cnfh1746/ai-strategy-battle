@@ -179,7 +179,7 @@ export class WerewolfGameEngine {
         this.phase = 'night';
         this.nightActions = {};
         
-        console.log(`[狼人杀] 第${this.dayNumber}天 - 夜晚阶段`);
+        console.log(`\n\n\n============== [狼人杀][NIGHT ${this.dayNumber}] START ==============`);
         
         this.appendToChat('🌙 系统', `\n========== 第 ${this.dayNumber} 天 - 夜晚 ==========\n\n天黑请闭眼...`);
         if (window.addPublicMessage) window.addPublicMessage('🌙 系统', `第 ${this.dayNumber} 天 - 夜晚`);
@@ -208,71 +208,88 @@ export class WerewolfGameEngine {
             `第${this.dayNumber}夜即将结束，黎明将至。今晚发生了什么？让我们拭目以待...`
         );
         
+        console.log(`============== [狼人杀][NIGHT ${this.dayNumber}] END ===============\n\n\n`);
+        
         // 5. 进入白天
         await this.startDayPhase();
     }
     
-    // 狼人行动
+    // 狼人行动（重构版，带讨论过程）
     async werewolvesAction() {
+        console.log(`---------- [狼人杀][NIGHT ${this.dayNumber}] Werewolves Action START ----------`);
         const werewolves = Object.values(this.players).filter(p => p.role === 'werewolf' && p.isAlive);
+        const werewolfNames = werewolves.map(w => w.name);
         
         if (werewolves.length === 0) {
-            console.log('[狼人杀] 没有存活的狼人');
+            console.log('[狼人杀][狼人行动] 没有存活的狼人，跳过。');
             return;
         }
         
         this.appendToChat('🐺 系统', '狼人请睁眼，选择今晚要击杀的目标...');
-        if (window.addPrivateMessage) window.addPrivateMessage(werewolves.map(w => w.name), '🐺 系统', '狼人请睁眼，商议击杀目标。');
+        if (window.addPrivateMessage) window.addPrivateMessage(werewolfNames, '🐺 系统', '狼人请睁眼，商议击杀目标。');
         
-        // 获取可选目标
         const targets = Object.values(this.players)
             .filter(p => p.role !== 'werewolf' && p.isAlive)
             .map(p => p.name);
         
         if (targets.length === 0) {
-            console.log('[狼人杀] 没有可击杀的目标');
+            console.log('[狼人杀][狼人行动] 没有可击杀的目标，跳过。');
+            if (window.addPrivateMessage) window.addPrivateMessage(werewolfNames, '🐺 系统', '没有可击杀的目标。');
             return;
         }
         
-        // 让每个狼人投票
+        // 狼人内部讨论
+        let discussionHistory = '';
         const votes = {};
+
         for (const wolf of werewolves) {
-            const prompt = `[狼人夜晚行动]
+            const teammates = werewolves.filter(w => w.id !== wolf.id).map(w => w.name).join('、');
+            const prompt = `[狼人夜晚讨论]
 
 你是狼人，现在是夜晚。
 
-存活的玩家：${Object.values(this.players).filter(p => p.isAlive).map(p => p.name).join('、')}
+你的狼人队友：${teammates || '无'}
 可击杀的目标：${targets.join('、')}
 
-${werewolves.length > 1 ? `你的狼人队友：${werewolves.filter(w => w.id !== wolf.id).map(w => w.name).join('、')}` : ''}
+${discussionHistory ? `[当前讨论内容]\n${discussionHistory}\n` : ''}
+现在轮到你发言，请提出你想击杀的目标和理由，并最终明确投票给谁。
+格式：先说理由，最后必须用 "我投票给：XXX" 来结束。`;
 
-请选择你想击杀的目标（只需回复目标的名字）：`;
-            
             try {
                 const response = await this.callPlayerAI(wolf.id, prompt);
-                // 解析回复，找出目标名字
-                const target = this.findPlayerNameInText(response, targets);
-                if (target) {
-                    votes[target] = (votes[target] || 0) + 1;
-                    console.log(`[狼人杀] ${wolf.name} 选择击杀 ${target}`);
-                    this.appendToChat('🐺 系统', `${wolf.name} 做出了选择...`);
+                if (window.addPrivateMessage) window.addPrivateMessage(werewolfNames, `🐺 ${wolf.name}`, response);
+                discussionHistory += `${wolf.name}: ${response}\n`;
+
+                // 解析投票
+                const voteMatch = response.match(/我投票给[：:\s]*(.+)/);
+                if (voteMatch) {
+                    const targetName = this.findPlayerNameInText(voteMatch[1], targets);
+                    if (targetName) {
+                        votes[targetName] = (votes[targetName] || 0) + 1;
+                        console.log(`[狼人杀][狼人行动] ${wolf.name} 投票给 ${targetName}`);
+                    }
                 }
             } catch (error) {
-                console.error(`[狼人杀] ${wolf.name} 行动失败:`, error);
+                console.error(`[狼人杀][狼人行动] ${wolf.name} 讨论失败:`, error);
+                if (window.addPrivateMessage) window.addPrivateMessage(werewolfNames, '❌ 系统', `${wolf.name} 讨论时出现网络问题。`);
             }
         }
         
-        // 统计投票结果
+        // 统计最终投票结果
         if (Object.keys(votes).length > 0) {
             const maxVotes = Math.max(...Object.values(votes));
             const victims = Object.keys(votes).filter(name => votes[name] === maxVotes);
-            const victim = victims[Math.floor(Math.random() * victims.length)];
+            const victim = victims[Math.floor(Math.random() * victims.length)]; // 平票随机
             
             this.nightActions.wolfKill = victim;
-            console.log(`[狼人杀] 狼人决定击杀：${victim}`);
+            console.log(`[狼人杀][狼人行动] 最终决定击杀：${victim}`);
             this.appendToChat('🐺 系统', '狼人已做出选择，请闭眼...');
-            if (window.addPrivateMessage) window.addPrivateMessage(werewolves.map(w => w.name), '🐺 系统', `狼人决定击杀：${victim}`);
+            if (window.addPrivateMessage) window.addPrivateMessage(werewolfNames, '🐺 系统', `讨论结束，最终决定击杀：${victim}`);
+        } else {
+            console.log('[狼人杀][狼人行动] 狼人未能达成共识，本轮空刀。');
+            if (window.addPrivateMessage) window.addPrivateMessage(werewolfNames, '🐺 系统', '无法达成共识，本轮空刀。');
         }
+        console.log(`---------- [狼人杀][NIGHT ${this.dayNumber}] Werewolves Action END ----------`);
     }
     
     // 预言家行动
@@ -421,7 +438,7 @@ ${werewolves.length > 1 ? `你的狼人队友：${werewolves.filter(w => w.id !=
     async startDayPhase() {
         this.phase = 'day';
         
-        console.log(`[狼人杀] 第${this.dayNumber}天 - 白天阶段`);
+        console.log(`\n\n\n============== [狼人杀][DAY ${this.dayNumber}] START ==============`);
         
         const deaths = this.nightActions.deaths || [];
         
@@ -467,6 +484,8 @@ ${werewolves.length > 1 ? `你的狼人队友：${werewolves.filter(w => w.id !=
 
         // 投票环节
         await this.votingPhase();
+        
+        console.log(`============== [狼人杀][DAY ${this.dayNumber}] END ===============\n\n\n`);
     }
     
     // 玩家发言环节
@@ -474,6 +493,7 @@ ${werewolves.length > 1 ? `你的狼人队友：${werewolves.filter(w => w.id !=
         const alivePlayers = Object.values(this.players).filter(p => p.isAlive);
         
         this.appendToChat('💬 系统', '现在进入发言环节，请存活的玩家依次发言...');
+        if (window.addPublicMessage) window.addPublicMessage('💬 系统', '发言环节开始...');
         
         for (const player of alivePlayers) {
             const context = this.getGameContextForPlayer(player.id);
@@ -490,19 +510,24 @@ ${context}
 请发言：`;
             
             try {
+                console.log(`[狼人杀][发言] 轮到 ${player.name}`);
                 const speech = await this.callPlayerAI(player.id, prompt);
                 this.appendToChat(`💬 ${player.name}`, speech);
                 if (window.addPublicMessage) window.addPublicMessage(`💬 ${player.name}`, speech);
-                console.log(`[狼人杀] ${player.name} 发言完毕`);
-                
-                // 暂停一下让玩家继续
-                this.paused = true;
-                await this.waitForResume();
+                console.log(`[狼人杀][发言] ${player.name} 发言完毕`);
             } catch (error) {
-                console.error(`[狼人杀] ${player.name} 发言失败:`, error);
+                console.error(`[狼人杀][发言] ${player.name} 发言失败:`, error);
                 this.appendToChat('🎮 系统', `${player.name} 因技术原因未能发言`);
+                if (window.addPublicMessage) window.addPublicMessage('❌ 系统', `${player.name} 发言失败`);
             }
         }
+        
+        // ⭐ 修复：将暂停逻辑移出循环，所有玩家发言完毕后才暂停
+        this.appendToChat('💬 系统', '所有玩家发言结束，即将进入投票环节。');
+        if (window.addPublicMessage) window.addPublicMessage('💬 系统', '所有玩家发言结束');
+        
+        this.paused = true;
+        await this.waitForResume();
     }
     
     // 投票环节
