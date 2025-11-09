@@ -58,6 +58,11 @@ class UniversalGameEngine {
         const fullMessage = `${this.gmSystemPrompt}\n\n[SYSTEM] ${userMessage}`;
         
         console.log('[AI对战][GM] 📋 完整消息（含系统提示）:', fullMessage.substring(0, 300));
+        console.log('[AI对战][GM] 🎯 完整消息长度:', fullMessage.length, '字符');
+        console.log('[AI对战][GM] 🎯 ========== 实际发送的完整消息 ==========');
+        console.log(fullMessage);
+        console.log('[AI对战][GM] 🎯 ========== 完整消息结束 ==========');
+        
         window.updateGmDebugPanel({ lastTrigger: fullMessage });
 
 
@@ -68,6 +73,10 @@ class UniversalGameEngine {
         const currentContext = this.getChatContext();
         console.log('[AI对战][GM] 📖 当前聊天上下文长度:', currentContext.length, '字符');
         console.log('[AI对战][GM] 📖 上下文前500字:\n', currentContext.substring(0, 500));
+        console.log('[AI对战][GM] 📖 ========== 完整聊天上下文 ==========');
+        console.log(currentContext);
+        console.log('[AI对战][GM] 📖 ========== 上下文结束 ==========');
+        
         window.updateGmDebugPanel({ contextLength: currentContext.length });
 
         // 2. 等待一小段时间让界面更新
@@ -89,6 +98,9 @@ class UniversalGameEngine {
         
         console.log('[AI对战][GM] 📥 GM原始回复 (前300字):\n', response.substring(0, 300));
         console.log('[AI对战][GM] 📥 完整回复长度:', response.length, '字符');
+        console.log('[AI对战][GM] 📥 ========== GM完整回复 ==========');
+        console.log(response);
+        console.log('[AI对战][GM] 📥 ========== 回复结束 ==========');
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
         window.updateGmDebugPanel({ rawResponse: response.substring(0, 100) + '...' });
 
