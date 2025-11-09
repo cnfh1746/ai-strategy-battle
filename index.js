@@ -42,10 +42,20 @@ class UniversalGameEngine {
     // 调用酒馆AI（GM）- 直接让酒馆角色回复
     async callGM(userMessage) {
         const context = getContext();
-        
+
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('[AI对战][GM] 📤 发送触发消息:', userMessage);
+        window.updateGmDebugPanel({ lastTrigger: userMessage });
+
         // 1. 添加用户消息到聊天（触发GM思考）
         this.appendToChat(context.name1 || '🎮 系统', userMessage);
         
+        // 获取当前上下文（看看GM能看到什么）
+        const currentContext = this.getChatContext();
+        console.log('[AI对战][GM] 📖 当前聊天上下文长度:', currentContext.length, '字符');
+        console.log('[AI对战][GM] 📖 上下文前500字:\n', currentContext.substring(0, 500));
+        window.updateGmDebugPanel({ contextLength: currentContext.length });
+
         // 2. 等待一小段时间让界面更新
         await new Promise(resolve => setTimeout(resolve, 100));
         
@@ -58,12 +68,16 @@ class UniversalGameEngine {
             throw new Error('找不到SillyTavern生成函数');
         }
         
-        console.log('[AI对战] 触发GM回复...');
+        console.log('[AI对战][GM] ⏳ 等待GM回复...');
         
         // 调用生成函数，让GM基于当前聊天历史回复
         const response = await generateRaw('', '', false, false);
         
-        console.log('[AI对战] GM回复:', response.substring(0, 100) + '...');
+        console.log('[AI对战][GM] 📥 GM原始回复 (前300字):\n', response.substring(0, 300));
+        console.log('[AI对战][GM] 📥 完整回复长度:', response.length, '字符');
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+        window.updateGmDebugPanel({ rawResponse: response.substring(0, 100) + '...' });
+
         return response;
     }
     
@@ -71,6 +85,9 @@ class UniversalGameEngine {
     async callPlayerAI(playerId, includeSecret = false) {
         const config = this.apiConfigs[playerId];
         if (!config || !config.key) throw new Error(`玩家 ${playerId} API未配置`);
+
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log(`[AI对战][玩家] 🎯 调用玩家: ${config.name}`);
         
         // 构建提示词
         let prompt = '';
@@ -78,21 +95,30 @@ class UniversalGameEngine {
         // 1. 人格设定
         if (config.customPrompt) {
             prompt += `[你的人格设定]\n${config.customPrompt}\n\n`;
+            console.log(`[AI对战][玩家] 👤 使用自定义人格 (${config.customPrompt.length}字符)`);
         }
         
         // 2. 公开信息（聊天记录）
         prompt += `[公开信息 - 所有玩家都能看到]\n`;
-        prompt += this.getChatContext();
+        const publicInfo = this.getChatContext();
+        prompt += publicInfo;
+        console.log(`[AI对战][玩家] 📢 公开信息长度: ${publicInfo.length}字符`);
         
         // 3. 秘密信息（只有这个AI知道）
         if (includeSecret && this.playerSecrets[playerId].length > 0) {
             prompt += `\n\n[秘密信息 - 只有你知道，其他玩家看不到]\n`;
             prompt += this.playerSecrets[playerId].join('\n');
+            console.log(`[AI对战][玩家] 🔒 秘密信息条数: ${this.playerSecrets[playerId].length}`);
+            console.log(`[AI对战][玩家] 🔒 秘密内容:`, this.playerSecrets[playerId]);
         }
         
         prompt += `\n\n请根据以上信息做出你的行动或发言。`;
         
+        console.log(`[AI对战][玩家] 📋 完整提示词 (前500字):\n`, prompt.substring(0, 500));
+        console.log(`[AI对战][玩家] 📋 提示词总长度: ${prompt.length}字符`);
+
         // 调用API
+        console.log(`[AI对战][玩家] 🌐 调用API: ${config.url}, 模型: ${config.model}`);
         let apiUrl = config.url.replace(/\/$/, '') + '/chat/completions';
         const response = await fetch(apiUrl, {
             method: 'POST',
@@ -110,12 +136,17 @@ class UniversalGameEngine {
         
         if (!response.ok) {
             const errorText = await response.text();
+            console.error(`[AI对战][玩家] ❌ API错误:`, errorText);
             throw new Error(`API错误 ${response.status}: ${errorText}`);
         }
         
         const data = await response.json();
         const aiResponse = data.choices[0].message.content;
         
+        console.log(`[AI对战][玩家] 💬 ${config.name} 回复 (前200字):\n`, aiResponse.substring(0, 200));
+        console.log(`[AI对战][玩家] 💬 回复总长度: ${aiResponse.length}字符`);
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+
         // 记录提示词
         if (window.addPromptLog) {
             window.addPromptLog(config.name, prompt, aiResponse);
@@ -207,6 +238,7 @@ class UniversalGameEngine {
         const playerList = Object.values(this.apiConfigs).map(c => c.name).join('、');
 
         toastr.info('扩展已启动，开始协调AI行动', 'AI对战');
+        window.updateGmDebugPanel({ lastTrigger: '游戏开始', contextLength: 0, rawResponse: '', parsedInstruction: '无', secretQueue: '无' });
 
         // 触发GM继续游戏（GM此时的上下文中应包含由世界书触发的游戏规则）
         const opening = await this.callGM(`🎮 扩展已启动。
@@ -239,10 +271,14 @@ class UniversalGameEngine {
             }
             
             // 解析GM指令 - 提取所有秘密指示和公开指令
+            console.log('[AI对战][解析] 🔍 开始解析GM指令...');
             const secretMatches = [...gmInstruction.matchAll(/【秘密指示[：:]\s*(.+?)\s*[|｜]\s*(.+?)】/g)];
+            console.log(`[AI对战][解析] 🔒 找到 ${secretMatches.length} 条秘密指示`);
             const publicMatch = gmInstruction.match(/【轮到[：:]\s*(.+?)】/);
+            console.log(`[AI对战][解析] 👉 公开行动指令:`, publicMatch ? publicMatch[1].trim() : '无');
             
             let hasAction = false;
+            let parsedInstruction = '无';
 
             // 处理所有秘密指示
             if (secretMatches.length > 0) {
@@ -258,6 +294,7 @@ class UniversalGameEngine {
                         this.appendToChat('🔒 系统', `已向 ${player.name} 发送秘密信息`);
                         
                         // 更新UI
+                        parsedInstruction = `秘密→${aiName}`;
                         window.updateGameStatus('运行中', roundCounter, `秘密通知→${aiName}`);
                         window.addActionLog('GM', `向 ${aiName} 发送秘密信息`);
                         this.updatePlayersDisplay();
@@ -278,6 +315,7 @@ class UniversalGameEngine {
                 if (player) {
                     try {
                         // 更新UI - 轮到这个玩家
+                        parsedInstruction = `轮到→${aiName}`;
                         window.updateGameStatus('运行中', roundCounter, player.name);
                         this.updatePlayersDisplay(player.id);
                         
@@ -316,6 +354,13 @@ class UniversalGameEngine {
 当前玩家：${playerList}
 `);
             }
+
+            // 更新调试面板
+            const secretQueue = Object.entries(this.playerSecrets)
+                .filter(([, secrets]) => secrets.length > 0)
+                .map(([id, secrets]) => `${this.apiConfigs[id].name}(${secrets.length})`)
+                .join(', ') || '无';
+            window.updateGmDebugPanel({ parsedInstruction, secretQueue });
             
             // 暂停等待用户点击"继续"
             this.paused = true;
@@ -406,6 +451,15 @@ let roundCounter = 0;
 let actionHistory = [];
 
 // ==================== UI辅助函数 ====================
+// 更新GM调试面板
+window.updateGmDebugPanel = function(data) {
+    if (data.lastTrigger) $('#gm-debug-trigger').text(data.lastTrigger);
+    if (data.contextLength) $('#gm-debug-context').text(data.contextLength + ' 字符');
+    if (data.rawResponse) $('#gm-debug-response').text(data.rawResponse);
+    if (data.parsedInstruction) $('#gm-debug-instruction').text(data.parsedInstruction);
+    if (data.secretQueue) $('#gm-debug-secrets').text(data.secretQueue);
+};
+
 // 更新游戏状态显示
 window.updateGameStatus = function(status, round, currentPlayer) {
     $('#status-text').text(status).css('color', 
@@ -671,6 +725,18 @@ jQuery(async () => {
                 </h4>
                 <div id="recent-actions" style="font-size: 10px; background: var(--black30a); padding: 8px; border-radius: 5px; max-height: 120px; overflow-y: auto;">
                     <div style="color: #888; text-align: center; padding: 10px;">暂无记录</div>
+                </div>
+            </div>
+
+            <!-- GM调试区 -->
+            <div class="gm-debug-section" style="margin-bottom: 15px; padding: 10px; background: var(--black30a); border-radius: 8px; border-left: 3px solid #9C27B0;">
+                <h4 style="cursor: pointer; margin: 0 0 8px 0; font-size: 13px; color: #9C27B0;" onclick="$(this).next().toggle()">🔬 GM调试信息</h4>
+                <div id="gm-debug-info" style="font-size: 11px; line-height: 1.6; display: none;">
+                    <div>触发消息: <span id="gm-debug-trigger">-</span></div>
+                    <div>上下文长度: <span id="gm-debug-context">-</span></div>
+                    <div>GM原始回复: <span id="gm-debug-response">-</span></div>
+                    <div>解析指令: <span id="gm-debug-instruction">-</span></div>
+                    <div>秘密队列: <span id="gm-debug-secrets">-</span></div>
                 </div>
             </div>
             
