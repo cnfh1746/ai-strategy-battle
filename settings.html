@@ -1,5 +1,20 @@
 <div class="battle-settings-container" style="padding: 15px;">
     <h3 style="margin-top: 0;">🎮 AI策略对战 - 通用版配置</h3>
+
+    <!-- GM 系统提示词配置 -->
+    <div style="margin-bottom: 20px; padding: 15px; background: var(--black30a); border-radius: 8px; border-left: 4px solid #9C27B0;">
+        <h3 style="margin: 0 0 10px 0; color: #9C27B0;">🎭 GM 系统提示词</h3>
+        <p style="font-size: 12px; color: #888; margin-bottom: 10px;">
+            这段提示词会在每次调用 GM 时自动附加，用于明确 GM 的身份和任务。
+        </p>
+        <textarea id="gm_system_prompt" class="text_pole" rows="6" style="width: 100%; resize: vertical;">你是一个游戏主持人（GM），负责协调多个AI玩家进行游戏。
+
+你的职责：
+1. 严格根据聊天记录中的游戏规则主持游戏
+2. 使用【轮到：玩家名】来指定某个玩家公开行动
+3. 使用【秘密指示：玩家名|内容】来给某个玩家发送秘密信息
+4. 绝对不要偏离当前游戏主题，不要回答无关问题</textarea>
+    </div>
     
     <!-- 6个AI配置 -->
     <div class="players-config">

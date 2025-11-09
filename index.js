@@ -8,6 +8,13 @@ const extensionFolderPath = `scripts/extensions/third-party/${extensionName}/`;
 
 // 默认设置
 const defaultSettings = {
+    gmSystemPrompt: `你是一个游戏主持人（GM），负责协调多个AI玩家进行游戏。
+
+你的职责：
+1. 严格根据聊天记录中的游戏规则主持游戏
+2. 使用【轮到：玩家名】来指定某个玩家公开行动
+3. 使用【秘密指示：玩家名|内容】来给某个玩家发送秘密信息
+4. 绝对不要偏离当前游戏主题，不要回答无关问题`,
     players: [
         { id: 'p1', name: 'AI-Alpha', apiUrl: '', apiKey: '', model: 'gpt-4', customPrompt: '' },
         { id: 'p2', name: 'AI-Beta', apiUrl: '', apiKey: '', model: 'gpt-4', customPrompt: '' },
@@ -22,6 +29,7 @@ const defaultSettings = {
 class UniversalGameEngine {
     constructor(settings) {
         this.settings = settings;
+        this.gmSystemPrompt = settings.gmSystemPrompt || defaultSettings.gmSystemPrompt;
         this.apiConfigs = {};
         this.running = false;
         this.paused = false;
@@ -45,10 +53,16 @@ class UniversalGameEngine {
 
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         console.log('[AI对战][GM] 📤 发送触发消息:', userMessage);
-        window.updateGmDebugPanel({ lastTrigger: userMessage });
+
+        // ⭐ 关键修改：附加系统提示词
+        const fullMessage = `${this.gmSystemPrompt}\n\n[SYSTEM] ${userMessage}`;
+        
+        console.log('[AI对战][GM] 📋 完整消息（含系统提示）:', fullMessage.substring(0, 300));
+        window.updateGmDebugPanel({ lastTrigger: fullMessage });
+
 
         // 1. 添加用户消息到聊天（触发GM思考）
-        this.appendToChat(context.name1 || '🎮 系统', userMessage);
+        this.appendToChat(context.name1 || '🎮 系统', fullMessage);
         
         // 获取当前上下文（看看GM能看到什么）
         const currentContext = this.getChatContext();
@@ -241,7 +255,7 @@ class UniversalGameEngine {
         window.updateGmDebugPanel({ lastTrigger: '游戏开始', contextLength: 0, rawResponse: '', parsedInstruction: '无', secretQueue: '无' });
 
         // 触发GM继续游戏（GM此时的上下文中应包含由世界书触发的游戏规则）
-        const opening = await this.callGM(`[SYSTEM] 扩展已启动，现在由你来协调AI行动。请严格根据你之前在聊天中说明的游戏规则和指令格式（【轮到：...】和【秘密指示：...】）来继续主持游戏。`);
+        const opening = await this.callGM(`扩展已启动，请根据聊天记录中的规则和当前游戏状态，继续主持游戏。`);
         
         window.addActionLog('GM', opening.substring(0, 100));
         
@@ -254,7 +268,7 @@ class UniversalGameEngine {
             }
             
             // 询问GM下一步该做什么
-            const gmInstruction = await this.callGM(`[SYSTEM] 请根据当前的聊天记录和游戏进展，继续主持游戏，并使用正确的指令格式（【轮到：...】或【秘密指示：...】）来发出下一步行动。`);
+            const gmInstruction = await this.callGM(`请根据当前的聊天记录和游戏进展，继续主持游戏，并发出下一步行动指令。`);
             window.addActionLog('GM', gmInstruction.substring(0, 100));
             
             // 检查游戏是否结束
@@ -531,6 +545,9 @@ function loadSettings() {
     }
     const settings = extension_settings[extensionName];
     
+    // 加载 GM 系统提示词
+    $('#gm_system_prompt').val(settings.gmSystemPrompt || defaultSettings.gmSystemPrompt);
+
     // 加载玩家配置
     settings.players.forEach((player, i) => {
         $(`#player${i + 1}_name`).val(player.name);
@@ -544,6 +561,9 @@ function loadSettings() {
 function saveSettings() {
     const settings = extension_settings[extensionName];
     
+    // 保存 GM 系统提示词
+    settings.gmSystemPrompt = $('#gm_system_prompt').val();
+
     // 保存玩家配置
     settings.players.forEach((player, i) => {
         player.name = $(`#player${i + 1}_name`).val();
