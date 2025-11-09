@@ -146,7 +146,11 @@ class UniversalGameEngine {
     getChatContext() {
         const context = getContext();
         const chat = context.chat || [];
-        return chat.slice(-20).map(msg => {
+        
+        // 获取最近50条消息，确保GM能看到足够多的历史
+        const recentMessages = chat.slice(-50);
+        
+        const contextText = recentMessages.map(msg => {
             const speaker = msg.is_user ? (context.name1 || '用户') : (msg.name || 'GM');
             let content = msg.mes;
             
@@ -155,6 +159,9 @@ class UniversalGameEngine {
             
             return `${speaker}: ${content}`;
         }).join('\n\n');
+        
+        console.log('[AI对战] GM上下文长度:', contextText.length, '字符');
+        return contextText;
     }
     
     // 添加消息到聊天
@@ -232,14 +239,22 @@ class UniversalGameEngine {
                 await this.waitForResume();
             }
             
+            // 构建完整的游戏上下文给GM
+            const gameContext = this.getChatContext();
+            
             // 询问GM下一步该做什么
             const gmInstruction = await this.callGM(`
-作为游戏主持人，请判断：
+【当前游戏状态和完整历史】
+${gameContext}
+
+【你的任务】
+作为游戏主持人，请根据以上完整的游戏历史判断：
 1. 当前游戏是否结束？如果结束，请宣布结果并说"游戏结束"
 2. 如果未结束，下一步需要哪个AI行动？请用格式回复：【轮到：AI名字】或【秘密指示：AI名字|秘密内容】
 
-如果需要给某个AI秘密信息（如狼人杀中告知身份），使用：【秘密指示：AI-Alpha|你的身份是狼人，队友是AI-Beta】
-如果是公开发言，使用：【轮到：AI-Alpha】
+【指令格式】
+• 给AI秘密信息：【秘密指示：AI-Alpha|你的身份是狼人，队友是AI-Beta】
+• 公开发言：【轮到：AI-Alpha】
 `);
             
             this.appendToChat('🎭 游戏主持', gmInstruction);
@@ -755,7 +770,7 @@ jQuery(async () => {
             // 切换到小面板模式
             panel.removeClass('expanded-mode').addClass('compact-mode');
             panel.css({
-                'width': '320px',
+                'width': '260px',
                 'height': 'auto',
                 'max-width': 'none',
                 'max-height': '85vh',
