@@ -1,11 +1,21 @@
 <div class="battle-settings-container" style="padding: 15px;">
     <h3 style="margin-top: 0;">🎮 AI策略对战 - 玩家配置</h3>
     
+    <!-- 游戏模式选择 -->
+    <div class="setting-group" style="margin-bottom: 20px; padding: 15px; background: var(--black30a); border-radius: 8px;">
+        <label style="display: block; font-weight: bold; margin-bottom: 10px;">🎯 游戏模式</label>
+        <select id="game_mode" class="text_pole" style="width: 100%;">
+            <option value="werewolf">狼人杀（6人）</option>
+            <option value="custom">自定义游戏（通过世界书定义规则）</option>
+        </select>
+        <small style="display: block; margin-top: 5px; color: #888;">选择游戏模式或自定义规则</small>
+    </div>
+    
     <!-- 世界书配置 -->
     <div class="setting-group" style="margin-bottom: 20px; padding: 15px; background: var(--black30a); border-radius: 8px;">
         <label style="display: block; font-weight: bold; margin-bottom: 10px;">📚 世界书名称（游戏规则）</label>
         <input type="text" id="worldbook_name" placeholder="例如：狼人杀规则" class="text_pole" style="width: 100%;">
-        <small style="display: block; margin-top: 5px; color: #888;">在世界书中创建包含"狼人杀"关键词的条目，系统将自动读取规则</small>
+        <small style="display: block; margin-top: 5px; color: #888;">在世界书中创建包含游戏名称的条目，系统将自动读取规则</small>
     </div>
     
     <!-- 6个AI配置 -->
@@ -16,6 +26,10 @@
             <div style="margin-bottom: 10px;">
                 <label style="display: block; margin-bottom: 5px;">名称</label>
                 <input type="text" id="player1_name" placeholder="AI-Alpha" class="text_pole" style="width: 100%;">
+            </div>
+            <div style="margin-bottom: 10px;">
+                <label style="display: block; margin-bottom: 5px;">API URL（可选，留空使用默认OpenAI）</label>
+                <input type="text" id="player1_api_url" placeholder="https://api.openai.com/v1" class="text_pole" style="width: 100%;">
             </div>
             <div style="margin-bottom: 10px;">
                 <label style="display: block; margin-bottom: 5px;">API Key</label>
@@ -39,6 +53,10 @@
                 <input type="text" id="player2_name" placeholder="AI-Beta" class="text_pole" style="width: 100%;">
             </div>
             <div style="margin-bottom: 10px;">
+                <label style="display: block; margin-bottom: 5px;">API URL（可选，留空使用默认OpenAI）</label>
+                <input type="text" id="player2_api_url" placeholder="https://api.openai.com/v1" class="text_pole" style="width: 100%;">
+            </div>
+            <div style="margin-bottom: 10px;">
                 <label style="display: block; margin-bottom: 5px;">API Key</label>
                 <input type="password" id="player2_api_key" placeholder="sk-..." class="text_pole" style="width: 100%;">
             </div>
@@ -58,6 +76,10 @@
             <div style="margin-bottom: 10px;">
                 <label style="display: block; margin-bottom: 5px;">名称</label>
                 <input type="text" id="player3_name" placeholder="AI-Gamma" class="text_pole" style="width: 100%;">
+            </div>
+            <div style="margin-bottom: 10px;">
+                <label style="display: block; margin-bottom: 5px;">API URL（可选，留空使用默认OpenAI）</label>
+                <input type="text" id="player3_api_url" placeholder="https://api.openai.com/v1" class="text_pole" style="width: 100%;">
             </div>
             <div style="margin-bottom: 10px;">
                 <label style="display: block; margin-bottom: 5px;">API Key</label>
@@ -81,6 +103,10 @@
                 <input type="text" id="player4_name" placeholder="AI-Delta" class="text_pole" style="width: 100%;">
             </div>
             <div style="margin-bottom: 10px;">
+                <label style="display: block; margin-bottom: 5px;">API URL（可选，留空使用默认OpenAI）</label>
+                <input type="text" id="player4_api_url" placeholder="https://api.openai.com/v1" class="text_pole" style="width: 100%;">
+            </div>
+            <div style="margin-bottom: 10px;">
                 <label style="display: block; margin-bottom: 5px;">API Key</label>
                 <input type="password" id="player4_api_key" placeholder="sk-..." class="text_pole" style="width: 100%;">
             </div>
@@ -100,6 +126,10 @@
             <div style="margin-bottom: 10px;">
                 <label style="display: block; margin-bottom: 5px;">名称</label>
                 <input type="text" id="player5_name" placeholder="AI-Echo" class="text_pole" style="width: 100%;">
+            </div>
+            <div style="margin-bottom: 10px;">
+                <label style="display: block; margin-bottom: 5px;">API URL（可选，留空使用默认OpenAI）</label>
+                <input type="text" id="player5_api_url" placeholder="https://api.openai.com/v1" class="text_pole" style="width: 100%;">
             </div>
             <div style="margin-bottom: 10px;">
                 <label style="display: block; margin-bottom: 5px;">API Key</label>
@@ -123,6 +153,10 @@
                 <input type="text" id="player6_name" placeholder="AI-Foxtrot" class="text_pole" style="width: 100%;">
             </div>
             <div style="margin-bottom: 10px;">
+                <label style="display: block; margin-bottom: 5px;">API URL（可选，留空使用默认OpenAI）</label>
+                <input type="text" id="player6_api_url" placeholder="https://api.openai.com/v1" class="text_pole" style="width: 100%;">
+            </div>
+            <div style="margin-bottom: 10px;">
                 <label style="display: block; margin-bottom: 5px;">API Key</label>
                 <input type="password" id="player6_api_key" placeholder="sk-..." class="text_pole" style="width: 100%;">
             </div>
@@ -142,11 +176,12 @@
     <div style="margin-top: 20px; padding: 15px; background: var(--black50a); border-radius: 8px;">
         <h4 style="margin-top: 0;">📖 使用说明</h4>
         <ol style="margin: 0; padding-left: 20px; line-height: 1.8;">
-            <li>配置6个AI的名称、API Key和模型</li>
+            <li>选择游戏模式（狼人杀或自定义）</li>
+            <li>配置6个AI的名称、API URL（可选）、API Key和模型</li>
             <li>（可选）为每个AI配置不同的人格特征</li>
-            <li>在世界书中创建狼人杀规则（关键词：狼人杀）</li>
+            <li>在世界书中创建游戏规则（关键词与游戏模式对应）</li>
             <li>保存配置后，在聊天界面右侧会出现"AI对战控制台"</li>
-            <li>点击"开始游戏"启动狼人杀对战</li>
+            <li>点击"开始游戏"启动对战</li>
             <li>游戏会在每个阶段暂停，你可以采访AI了解其思考过程</li>
             <li>点击"继续游戏"推进游戏进程</li>
         </ol>

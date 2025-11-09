@@ -9,6 +9,7 @@ const extensionFolderPath = `scripts/extensions/third-party/${extensionName}/`;
 
 // 默认设置
 const defaultSettings = {
+    gameMode: 'werewolf', // werewolf 或 custom
     players: [
         { id: 'p1', name: 'AI-Alpha', apiType: 'openai', apiUrl: '', apiKey: '', model: 'gpt-4', customPrompt: '' },
         { id: 'p2', name: 'AI-Beta', apiType: 'openai', apiUrl: '', apiKey: '', model: 'gpt-4', customPrompt: '' },
@@ -526,23 +527,37 @@ function loadSettings() {
         extension_settings[extensionName] = defaultSettings;
     }
     const settings = extension_settings[extensionName];
+    
+    // 加载游戏模式
+    $('#game_mode').val(settings.gameMode || 'werewolf');
+    
+    // 加载玩家配置
     settings.players.forEach((player, i) => {
         $(`#player${i + 1}_name`).val(player.name);
+        $(`#player${i + 1}_api_url`).val(player.apiUrl || '');
         $(`#player${i + 1}_api_key`).val(player.apiKey);
         $(`#player${i + 1}_model`).val(player.model);
         $(`#player${i + 1}_custom_prompt`).val(player.customPrompt || '');
     });
+    
     $('#worldbook_name').val(settings.worldbookName || '');
 }
 
 function saveSettings() {
     const settings = extension_settings[extensionName];
+    
+    // 保存游戏模式
+    settings.gameMode = $('#game_mode').val();
+    
+    // 保存玩家配置
     settings.players.forEach((player, i) => {
         player.name = $(`#player${i + 1}_name`).val();
+        player.apiUrl = $(`#player${i + 1}_api_url`).val() || '';
         player.apiKey = $(`#player${i + 1}_api_key`).val();
         player.model = $(`#player${i + 1}_model`).val();
         player.customPrompt = $(`#player${i + 1}_custom_prompt`).val() || '';
     });
+    
     settings.worldbookName = $('#worldbook_name').val();
     saveSettingsDebounced();
     toastr.success('设置已保存', 'AI对战');
@@ -657,7 +672,7 @@ jQuery(async () => {
     
     // 创建浮动控制面板
     const floatingPanel = $(`
-        <div id="ai-battle-panel" style="position: fixed; right: 20px; top: 100px; width: 400px; max-height: 80vh; overflow-y: auto; background: var(--SmartThemeBlurTintColor); border: 2px solid var(--SmartThemeBorderColor); border-radius: 10px; padding: 15px; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.3); display: none;">
+        <div id="ai-battle-panel" style="position: fixed; right: 20px; top: 100px; width: 200px; max-height: 80vh; overflow-y: auto; background: var(--SmartThemeBlurTintColor); border: 2px solid var(--SmartThemeBorderColor); border-radius: 10px; padding: 10px; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.3); display: none; font-size: 12px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <h3 style="margin: 0;">🎮 AI对战控制台</h3>
                 <button id="toggle-panel" class="menu_button" style="padding: 5px 10px;">−</button>

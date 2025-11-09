@@ -198,3 +198,145 @@
     background: #666;
     cursor: not-allowed;
 }
+
+/* 浮动控制面板样式 */
+#battle-control-panel {
+    position: fixed;
+    right: 20px;
+    top: 80px;
+    width: 200px;
+    max-height: 80vh;
+    background: var(--SmartThemeBlurTintColor);
+    border: 2px solid var(--SmartThemeBorderColor);
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+#battle-control-panel.collapsed {
+    width: 50px;
+    height: 50px;
+}
+
+.panel-header {
+    background: var(--SmartThemeQuoteColor);
+    color: white;
+    padding: 12px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.panel-content {
+    padding: 15px;
+    max-height: calc(80vh - 50px);
+    overflow-y: auto;
+}
+
+#battle-control-panel.collapsed .panel-content {
+    display: none;
+}
+
+.panel-section {
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--SmartThemeBorderColor);
+}
+
+.panel-section:last-child {
+    border-bottom: none;
+}
+
+.panel-section h4 {
+    margin: 0 0 10px 0;
+    font-size: 13px;
+    color: var(--SmartThemeQuoteColor);
+}
+
+.panel-button {
+    width: 100%;
+    padding: 8px;
+    margin: 5px 0;
+    font-size: 13px;
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 5px;
+    background: var(--black30a);
+    color: var(--SmartThemeBodyColor);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.panel-button:hover {
+    background: var(--SmartThemeQuoteColor);
+    color: white;
+}
+
+.panel-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.interview-section select,
+.interview-section textarea {
+    width: 100%;
+    margin: 5px 0;
+    padding: 5px;
+    font-size: 12px;
+    background: var(--black30a);
+    color: var(--SmartThemeBodyColor);
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 3px;
+}
+
+.interview-section textarea {
+    min-height: 60px;
+    resize: vertical;
+}
+
+.prompt-log {
+    max-height: 300px;
+    overflow-y: auto;
+    font-size: 11px;
+    background: var(--black50a);
+    padding: 8px;
+    border-radius: 5px;
+    margin-top: 8px;
+}
+
+.prompt-entry {
+    margin-bottom: 10px;
+    padding: 8px;
+    background: var(--black30a);
+    border-radius: 3px;
+    border-left: 3px solid var(--SmartThemeQuoteColor);
+}
+
+.prompt-entry strong {
+    color: var(--SmartThemeQuoteColor);
+    display: block;
+    margin-bottom: 5px;
+}
+
+.prompt-entry pre {
+    margin: 5px 0;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-size: 10px;
+    line-height: 1.4;
+}
+
+details summary {
+    cursor: pointer;
+    user-select: none;
+    padding: 5px 0;
+    font-weight: bold;
+}
+
+details[open] summary {
+    margin-bottom: 10px;
+}
