@@ -640,6 +640,65 @@ function saveSettings() {
     toastr.success('设置已保存', 'AI对战');
 }
 
+// 拉取 GM 可用模型列表
+async function fetchGmModels() {
+    const apiUrl = $('#gm_api_url').val();
+    const apiKey = $('#gm_api_key').val();
+    
+    if (!apiUrl || !apiKey) {
+        toastr.warning('请先填写 GM 的 API 地址和密钥', 'AI对战');
+        return;
+    }
+    
+    const button = $('#fetch_gm_models');
+    button.prop('disabled', true).text('⏳ 拉取中...');
+    
+    try {
+        const modelsUrl = apiUrl.replace(/\/$/, '') + '/models';
+        const response = await fetch(modelsUrl, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`API错误 ${response.status}`);
+        }
+        
+        const data = await response.json();
+        const models = data.data || data.models || [];
+        
+        if (models.length === 0) {
+            toastr.warning('未找到可用模型', 'AI对战');
+            return;
+        }
+        
+        // 更新下拉列表
+        const select = $('#gm_model');
+        const currentValue = select.val();
+        select.empty();
+        
+        models.forEach(model => {
+            const modelId = model.id || model;
+            select.append(`<option value="${modelId}">${modelId}</option>`);
+        });
+        
+        // 恢复之前的选择（如果存在）
+        if (models.find(m => (m.id || m) === currentValue)) {
+            select.val(currentValue);
+        }
+        
+        toastr.success(`已加载 ${models.length} 个模型`, 'AI对战');
+        
+    } catch (error) {
+        console.error('[AI对战] 拉取 GM 模型失败:', error);
+        toastr.error(`拉取模型失败: ${error.message}`, 'AI对战');
+    } finally {
+        button.prop('disabled', false).text('🔄 拉取');
+    }
+}
+
 async function startGame() {
     const settings = extension_settings[extensionName];
     
@@ -858,6 +917,7 @@ jQuery(async () => {
     $(document).on('click', '#continue_game', continueGame);
     $(document).on('click', '#stop_game', stopGame);
     $(document).on('click', '#send-interview', sendInterview);
+    $(document).on('click', '#fetch_gm_models', fetchGmModels);  // ⭐ 新增
     
     // 折叠/展开面板
     $(document).on('click', '#toggle-panel', function() {

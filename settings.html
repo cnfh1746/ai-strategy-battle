@@ -25,8 +25,13 @@
                 <input id="gm_api_url" type="text" class="text_pole" style="width: 100%;" placeholder="https://api.openai.com/v1" />
             </div>
             <div style="flex: 1;">
-                <label style="display: block; margin-bottom: 5px;">模型</label>
-                <input id="gm_model" type="text" class="text_pole" style="width: 100%;" placeholder="gpt-4" />
+                <label style="display: block; margin-bottom: 5px;">
+                    模型
+                    <button id="fetch_gm_models" class="menu_button" style="padding: 2px 8px; margin-left: 5px; font-size: 11px;">🔄 拉取</button>
+                </label>
+                <select id="gm_model" class="text_pole" style="width: 100%;">
+                    <option value="gpt-4">gpt-4</option>
+                </select>
             </div>
         </div>
         <div>
