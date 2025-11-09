@@ -15,6 +15,25 @@
 3. 使用【秘密指示：玩家名|内容】来给某个玩家发送秘密信息
 4. 绝对不要偏离当前游戏主题，不要回答无关问题</textarea>
     </div>
+
+    <!-- ⭐ 新增：GM API 配置 -->
+    <div style="margin-bottom: 20px; padding: 15px; background: var(--black30a); border-radius: 8px; border-left: 4px solid #4CAF50;">
+        <h3 style="margin: 0 0 10px 0; color: #4CAF50;">🤖 GM API 配置</h3>
+        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+            <div style="flex: 1;">
+                <label style="display: block; margin-bottom: 5px;">API 地址</label>
+                <input id="gm_api_url" type="text" class="text_pole" style="width: 100%;" placeholder="https://api.openai.com/v1" />
+            </div>
+            <div style="flex: 1;">
+                <label style="display: block; margin-bottom: 5px;">模型</label>
+                <input id="gm_model" type="text" class="text_pole" style="width: 100%;" placeholder="gpt-4" />
+            </div>
+        </div>
+        <div>
+            <label style="display: block; margin-bottom: 5px;">API Key</label>
+            <input id="gm_api_key" type="password" class="text_pole" style="width: 100%;" placeholder="sk-..." />
+        </div>
+    </div>
     
     <!-- 6个AI配置 -->
     <div class="players-config">

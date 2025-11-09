@@ -15,6 +15,9 @@ const defaultSettings = {
 2. 使用【轮到：玩家名】来指定某个玩家公开行动
 3. 使用【秘密指示：玩家名|内容】来给某个玩家发送秘密信息
 4. 绝对不要偏离当前游戏主题，不要回答无关问题`,
+    gmApiUrl: '',           // ⭐ 新增
+    gmApiKey: '',           // ⭐ 新增
+    gmModel: 'gpt-4',       // ⭐ 新增
     players: [
         { id: 'p1', name: 'AI-Alpha', apiUrl: '', apiKey: '', model: 'gpt-4', customPrompt: '' },
         { id: 'p2', name: 'AI-Beta', apiUrl: '', apiKey: '', model: 'gpt-4', customPrompt: '' },
@@ -30,6 +33,12 @@ class UniversalGameEngine {
     constructor(settings) {
         this.settings = settings;
         this.gmSystemPrompt = settings.gmSystemPrompt || defaultSettings.gmSystemPrompt;
+        
+        // ⭐ 新增：GM API 配置
+        this.gmApiUrl = settings.gmApiUrl || '';
+        this.gmApiKey = settings.gmApiKey || '';
+        this.gmModel = settings.gmModel || 'gpt-4';
+        
         this.apiConfigs = {};
         this.running = false;
         this.paused = false;
@@ -47,64 +56,96 @@ class UniversalGameEngine {
         });
     }
     
-    // 调用酒馆AI（GM）- 直接让酒馆角色回复
+    // 调用GM API - 直接调用独立的API
     async callGM(userMessage) {
-        const context = getContext();
-
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         console.log('[AI对战][GM] 📤 发送触发消息:', userMessage);
 
-        // ⭐ 关键修改：附加系统提示词
-        const fullMessage = `${this.gmSystemPrompt}\n\n[SYSTEM] ${userMessage}`;
-        
-        console.log('[AI对战][GM] 📋 完整消息（含系统提示）:', fullMessage.substring(0, 300));
-        console.log('[AI对战][GM] 🎯 完整消息长度:', fullMessage.length, '字符');
-        console.log('[AI对战][GM] 🎯 ========== 实际发送的完整消息 ==========');
-        console.log(fullMessage);
-        console.log('[AI对战][GM] 🎯 ========== 完整消息结束 ==========');
-        
-        window.updateGmDebugPanel({ lastTrigger: fullMessage });
-
-
-        // 1. 添加用户消息到聊天（触发GM思考）
-        this.appendToChat(context.name1 || '🎮 系统', fullMessage);
-        
-        // 获取当前上下文（看看GM能看到什么）
-        const currentContext = this.getChatContext();
-        console.log('[AI对战][GM] 📖 当前聊天上下文长度:', currentContext.length, '字符');
-        console.log('[AI对战][GM] 📖 上下文前500字:\n', currentContext.substring(0, 500));
-        console.log('[AI对战][GM] 📖 ========== 完整聊天上下文 ==========');
-        console.log(currentContext);
-        console.log('[AI对战][GM] 📖 ========== 上下文结束 ==========');
-        
-        window.updateGmDebugPanel({ contextLength: currentContext.length });
-
-        // 2. 等待一小段时间让界面更新
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        // 3. 触发GM生成回复
-        const generateRaw = window.generateRaw || 
-                          window.Generate?.generateRaw || 
-                          getContext()?.generateRaw;
-        
-        if (!generateRaw) {
-            throw new Error('找不到SillyTavern生成函数');
+        // 检查 GM API 配置
+        if (!this.gmApiUrl || !this.gmApiKey) {
+            const error = 'GM API 未配置！请在设置中配置 GM 的 API 地址和密钥。';
+            console.error('[AI对战][GM] ❌', error);
+            toastr.error(error, 'AI对战');
+            throw new Error(error);
         }
-        
-        console.log('[AI对战][GM] ⏳ 等待GM回复...');
-        
-        // 调用生成函数，让GM基于当前聊天历史回复
-        const response = await generateRaw('', '', false, false);
-        
-        console.log('[AI对战][GM] 📥 GM原始回复 (前300字):\n', response.substring(0, 300));
-        console.log('[AI对战][GM] 📥 完整回复长度:', response.length, '字符');
-        console.log('[AI对战][GM] 📥 ========== GM完整回复 ==========');
-        console.log(response);
-        console.log('[AI对战][GM] 📥 ========== 回复结束 ==========');
-        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-        window.updateGmDebugPanel({ rawResponse: response.substring(0, 100) + '...' });
 
-        return response;
+        // 构建完整提示词
+        const currentContext = this.getChatContext();
+        const fullPrompt = `${this.gmSystemPrompt}
+
+[当前游戏状态 - 聊天记录]
+${currentContext}
+
+[系统触发]
+${userMessage}
+
+请根据以上信息继续主持游戏。`;
+
+        console.log('[AI对战][GM] 🎯 完整提示词长度:', fullPrompt.length, '字符');
+        console.log('[AI对战][GM] 🎯 ========== 完整提示词 ==========');
+        console.log(fullPrompt);
+        console.log('[AI对战][GM] 🎯 ========== 提示词结束 ==========');
+
+        // 调用 GM 的独立 API
+        try {
+            let apiUrl = this.gmApiUrl.replace(/\/$/, '') + '/chat/completions';
+            console.log('[AI对战][GM] 🌐 调用 API:', apiUrl, ', 模型:', this.gmModel);
+            
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.gmApiKey}`
+                },
+                body: JSON.stringify({
+                    model: this.gmModel,
+                    messages: [
+                        {
+                            role: 'system',
+                            content: this.gmSystemPrompt
+                        },
+                        {
+                            role: 'user',
+                            content: `[当前游戏状态]\n${currentContext}\n\n[系统触发]\n${userMessage}`
+                        }
+                    ],
+                    temperature: 0.7,
+                    max_tokens: 2000
+                })
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('[AI对战][GM] ❌ API 错误:', errorText);
+                throw new Error(`API错误 ${response.status}: ${errorText}`);
+            }
+
+            const data = await response.json();
+            const gmResponse = data.choices[0].message.content;
+
+            console.log('[AI对战][GM] 📥 GM 回复 (前300字):\n', gmResponse.substring(0, 300));
+            console.log('[AI对战][GM] 📥 完整回复长度:', gmResponse.length, '字符');
+            console.log('[AI对战][GM] 📥 ========== GM 完整回复 ==========');
+            console.log(gmResponse);
+            console.log('[AI对战][GM] 📥 ========== 回复结束 ==========');
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+
+            // ⭐ 把 GM 回复插入到酒馆聊天中
+            this.appendToChat('🎮 GM', gmResponse);
+
+            window.updateGmDebugPanel({ 
+                lastTrigger: userMessage, 
+                contextLength: currentContext.length,
+                rawResponse: gmResponse.substring(0, 100) + '...'
+            });
+
+            return gmResponse;
+
+        } catch (error) {
+            console.error('[AI对战][GM] ❌ 调用失败:', error);
+            toastr.error(`GM 调用失败: ${error.message}`, 'AI对战');
+            throw error;
+        }
     }
     
     // 调用玩家AI（可以包含秘密信息）- 并把回复插入酒馆
@@ -560,6 +601,11 @@ function loadSettings() {
     // 加载 GM 系统提示词
     $('#gm_system_prompt').val(settings.gmSystemPrompt || defaultSettings.gmSystemPrompt);
 
+    // ⭐ 新增：加载 GM API 配置
+    $('#gm_api_url').val(settings.gmApiUrl || '');
+    $('#gm_api_key').val(settings.gmApiKey || '');
+    $('#gm_model').val(settings.gmModel || 'gpt-4');
+
     // 加载玩家配置
     settings.players.forEach((player, i) => {
         $(`#player${i + 1}_name`).val(player.name);
@@ -575,6 +621,11 @@ function saveSettings() {
     
     // 保存 GM 系统提示词
     settings.gmSystemPrompt = $('#gm_system_prompt').val();
+
+    // ⭐ 新增：保存 GM API 配置
+    settings.gmApiUrl = $('#gm_api_url').val();
+    settings.gmApiKey = $('#gm_api_key').val();
+    settings.gmModel = $('#gm_model').val();
 
     // 保存玩家配置
     settings.players.forEach((player, i) => {
