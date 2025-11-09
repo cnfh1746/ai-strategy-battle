@@ -639,10 +639,13 @@ jQuery(async () => {
     
     // 创建浮动控制面板
     const floatingPanel = $(`
-        <div id="ai-battle-panel" style="position: fixed; right: 20px; top: 100px; width: 320px; max-height: 85vh; overflow-y: auto; background: var(--SmartThemeBlurTintColor); border: 2px solid var(--SmartThemeBorderColor); border-radius: 10px; padding: 15px; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.3); display: none; font-size: 12px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <div id="ai-battle-panel" class="compact-mode" style="position: fixed; right: 20px; top: 100px; width: 320px; max-height: 85vh; overflow-y: auto; background: var(--SmartThemeBlurTintColor); border: 2px solid var(--SmartThemeBorderColor); border-radius: 10px; padding: 15px; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.3); display: none; font-size: 12px; resize: both; min-width: 280px; min-height: 400px;">
+            <div id="panel-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; cursor: move; user-select: none;">
                 <h3 style="margin: 0; font-size: 15px;">🎮 AI对战控制台</h3>
-                <button id="toggle-panel" class="menu_button" style="padding: 5px 10px;">−</button>
+                <div style="display: flex; gap: 5px;">
+                    <button id="toggle-size" class="menu_button" style="padding: 5px 10px;" title="切换大小面板">⛶</button>
+                    <button id="toggle-panel" class="menu_button" style="padding: 5px 10px;" title="折叠/展开">−</button>
+                </div>
             </div>
             
             <!-- 游戏状态区 -->
@@ -714,10 +717,116 @@ jQuery(async () => {
     $(document).on('click', '#continue_game', continueGame);
     $(document).on('click', '#stop_game', stopGame);
     $(document).on('click', '#send-interview', sendInterview);
+    
+    // 折叠/展开面板
     $(document).on('click', '#toggle-panel', function() {
-        const content = $('#ai-battle-panel > div:not(:first)');
+        const content = $('#ai-battle-panel > div:not(#panel-header)');
         content.toggle();
         $(this).text(content.is(':visible') ? '−' : '+');
+    });
+    
+    // 切换大小模式
+    $(document).on('click', '#toggle-size', function() {
+        const panel = $('#ai-battle-panel');
+        
+        if (panel.hasClass('compact-mode')) {
+            // 切换到大面板模式
+            panel.removeClass('compact-mode').addClass('expanded-mode');
+            panel.css({
+                'width': '80vw',
+                'height': '70vh',
+                'max-width': '1200px',
+                'max-height': '800px',
+                'left': '50%',
+                'top': '50%',
+                'right': 'auto',
+                'transform': 'translate(-50%, -50%)',
+                'overflow': 'hidden'
+            });
+            
+            // 调整内部区域高度
+            $('#players-list').css('max-height', '250px');
+            $('#recent-actions').css('max-height', '200px');
+            $('#prompt-logs').css('max-height', '250px');
+            
+            $(this).attr('title', '切换到小面板');
+            toastr.info('已切换到大面板模式', 'AI对战');
+        } else {
+            // 切换到小面板模式
+            panel.removeClass('expanded-mode').addClass('compact-mode');
+            panel.css({
+                'width': '320px',
+                'height': 'auto',
+                'max-width': 'none',
+                'max-height': '85vh',
+                'left': 'auto',
+                'top': '100px',
+                'right': '20px',
+                'transform': 'none',
+                'overflow-y': 'auto'
+            });
+            
+            // 恢复内部区域高度
+            $('#players-list').css('max-height', '150px');
+            $('#recent-actions').css('max-height', '120px');
+            $('#prompt-logs').css('max-height', '150px');
+            
+            $(this).attr('title', '切换到大面板');
+            toastr.info('已切换到小面板模式', 'AI对战');
+        }
+    });
+    
+    // 面板拖动功能
+    let isDragging = false;
+    let dragOffsetX = 0;
+    let dragOffsetY = 0;
+    
+    $(document).on('mousedown', '#panel-header', function(e) {
+        // 如果点击的是按钮，不触发拖动
+        if ($(e.target).is('button') || $(e.target).closest('button').length) {
+            return;
+        }
+        
+        isDragging = true;
+        const panel = $('#ai-battle-panel');
+        const panelOffset = panel.offset();
+        
+        dragOffsetX = e.pageX - panelOffset.left;
+        dragOffsetY = e.pageY - panelOffset.top;
+        
+        panel.css('cursor', 'grabbing');
+        e.preventDefault();
+    });
+    
+    $(document).on('mousemove', function(e) {
+        if (isDragging) {
+            const panel = $('#ai-battle-panel');
+            
+            let newLeft = e.pageX - dragOffsetX;
+            let newTop = e.pageY - dragOffsetY;
+            
+            // 限制在窗口范围内
+            const maxLeft = $(window).width() - panel.outerWidth();
+            const maxTop = $(window).height() - panel.outerHeight();
+            
+            newLeft = Math.max(0, Math.min(newLeft, maxLeft));
+            newTop = Math.max(0, Math.min(newTop, maxTop));
+            
+            panel.css({
+                'left': newLeft + 'px',
+                'top': newTop + 'px',
+                'right': 'auto',
+                'transform': 'none'
+            });
+        }
+    });
+    
+    $(document).on('mouseup', function() {
+        if (isDragging) {
+            isDragging = false;
+            $('#ai-battle-panel').css('cursor', '');
+            $('#panel-header').css('cursor', 'move');
+        }
     });
     
     console.log('[AI策略对战] 扩展已加载 - 通用版');
