@@ -65,6 +65,7 @@ export class WerewolfGameEngine {
 现在开始分配身份...`;
         
         this.appendToChat('🎮 系统', opening);
+        if (window.addPublicMessage) window.addPublicMessage('🎮 系统', '游戏开始，正在分配身份...');
         
         // 2. 分配身份
         await this.assignRoles();
@@ -132,6 +133,7 @@ export class WerewolfGameEngine {
             }
             
             this.appendToChat('🔒 系统', `已向 ${player.name} 发送身份信息`);
+            if (window.addPrivateMessage) window.addPrivateMessage([player.name], '🔒 系统', `你的身份是：${player.roleInfo.name}`);
             
             // 直接调用 AI 告知身份
             await this.sendSecretToPlayer(playerId, secretMessage);
@@ -180,6 +182,7 @@ export class WerewolfGameEngine {
         console.log(`[狼人杀] 第${this.dayNumber}天 - 夜晚阶段`);
         
         this.appendToChat('🌙 系统', `\n========== 第 ${this.dayNumber} 天 - 夜晚 ==========\n\n天黑请闭眼...`);
+        if (window.addPublicMessage) window.addPublicMessage('🌙 系统', `第 ${this.dayNumber} 天 - 夜晚`);
 
         // 🎙️ 解说点1：夜晚开始
         await this.callCommentator(
@@ -219,6 +222,7 @@ export class WerewolfGameEngine {
         }
         
         this.appendToChat('🐺 系统', '狼人请睁眼，选择今晚要击杀的目标...');
+        if (window.addPrivateMessage) window.addPrivateMessage(werewolves.map(w => w.name), '🐺 系统', '狼人请睁眼，商议击杀目标。');
         
         // 获取可选目标
         const targets = Object.values(this.players)
@@ -267,6 +271,7 @@ ${werewolves.length > 1 ? `你的狼人队友：${werewolves.filter(w => w.id !=
             this.nightActions.wolfKill = victim;
             console.log(`[狼人杀] 狼人决定击杀：${victim}`);
             this.appendToChat('🐺 系统', '狼人已做出选择，请闭眼...');
+            if (window.addPrivateMessage) window.addPrivateMessage(werewolves.map(w => w.name), '🐺 系统', `狼人决定击杀：${victim}`);
         }
     }
     
@@ -280,6 +285,7 @@ ${werewolves.length > 1 ? `你的狼人队友：${werewolves.filter(w => w.id !=
         }
         
         this.appendToChat('🔮 系统', '预言家请睁眼，选择你要查验的目标...');
+        if (window.addPrivateMessage) window.addPrivateMessage([seer.name], '🔮 系统', '预言家请睁眼，选择查验目标。');
         
         const targets = Object.values(this.players)
             .filter(p => p.id !== seer.id && p.isAlive)
@@ -304,6 +310,7 @@ ${werewolves.length > 1 ? `你的狼人队友：${werewolves.filter(w => w.id !=
                 
                 console.log(`[狼人杀] 预言家查验 ${target}，结果：${result}`);
                 this.appendToChat('🔮 系统', `预言家查验了 ${target}...`);
+                if (window.addPrivateMessage) window.addPrivateMessage([seer.name], '🔮 系统', `查验结果：${target} 是 ${result}`);
                 
                 // 告知预言家结果
                 await this.sendSecretToPlayer(seer.id, `[查验结果]\n你查验的 ${target} 是：${result}`);
@@ -325,6 +332,7 @@ ${werewolves.length > 1 ? `你的狼人队友：${werewolves.filter(w => w.id !=
         }
         
         this.appendToChat('💊 系统', '女巫请睁眼...');
+        if (window.addPrivateMessage) window.addPrivateMessage([witch.name], '💊 系统', '女巫请睁眼，等待你的行动。');
         
         let prompt = `[女巫夜晚行动]
 
@@ -362,6 +370,7 @@ ${werewolves.length > 1 ? `你的狼人队友：${werewolves.filter(w => w.id !=
                 this.witchPotions.antidote = false;
                 console.log(`[狼人杀] 女巫使用解药救了 ${this.nightActions.wolfKill}`);
                 this.appendToChat('💊 系统', '女巫使用了解药...');
+                if (window.addPrivateMessage) window.addPrivateMessage([witch.name], '💊 系统', `你使用了【解药】救活了 ${this.nightActions.wolfKill}`);
             } else if (response.includes('使用毒药') && this.witchPotions.poison) {
                 const poisonTarget = this.findPlayerNameInText(response, aliveTargets);
                 if (poisonTarget) {
@@ -369,6 +378,7 @@ ${werewolves.length > 1 ? `你的狼人队友：${werewolves.filter(w => w.id !=
                     this.witchPotions.poison = false;
                     console.log(`[狼人杀] 女巫使用毒药毒杀 ${poisonTarget}`);
                     this.appendToChat('💊 系统', '女巫使用了毒药...');
+                    if (window.addPrivateMessage) window.addPrivateMessage([witch.name], '💊 系统', `你使用了【毒药】杀死了 ${poisonTarget}`);
                 }
             } else {
                 console.log('[狼人杀] 女巫选择不使用药水');
@@ -417,6 +427,7 @@ ${werewolves.length > 1 ? `你的狼人队友：${werewolves.filter(w => w.id !=
         
         if (deaths.length === 0) {
             this.appendToChat('☀️ 系统', '\n========== 天亮了 ==========\n\n昨晚是平安夜，没有玩家死亡。');
+            if (window.addPublicMessage) window.addPublicMessage('☀️ 系统', '昨晚是平安夜，没有玩家死亡。');
             
             // 🎙️ 解说点3a：平安夜
             await this.callCommentator(
@@ -425,6 +436,7 @@ ${werewolves.length > 1 ? `你的狼人队友：${werewolves.filter(w => w.id !=
             );
         } else {
             this.appendToChat('☀️ 系统', `\n========== 天亮了 ==========\n\n昨晚死亡的玩家是：${deaths.join('、')}\n\n请存活的玩家依次发言...`);
+            if (window.addPublicMessage) window.addPublicMessage('☀️ 系统', `昨晚死亡的玩家是：${deaths.join('、')}`);
             
             // 🎙️ 解说点3b：有人死亡
             const deathInfo = deaths.map(name => {
@@ -480,6 +492,7 @@ ${context}
             try {
                 const speech = await this.callPlayerAI(player.id, prompt);
                 this.appendToChat(`💬 ${player.name}`, speech);
+                if (window.addPublicMessage) window.addPublicMessage(`💬 ${player.name}`, speech);
                 console.log(`[狼人杀] ${player.name} 发言完毕`);
                 
                 // 暂停一下让玩家继续
@@ -535,6 +548,7 @@ ${context}
         if (Object.keys(votes).length > 0) {
             const voteResults = Object.entries(votes).map(([name, count]) => `${name}(${count}票)`).join('、');
             this.appendToChat('🗳️ 系统', `\n投票结果：${voteResults}`);
+            if (window.addPublicMessage) window.addPublicMessage('🗳️ 系统', `投票结果：${voteResults}`);
             
             const maxVotes = Math.max(...Object.values(votes));
             const eliminated = Object.keys(votes).filter(name => votes[name] === maxVotes);
@@ -544,6 +558,7 @@ ${context}
                 eliminatedPlayer.isAlive = false;
                 
                 this.appendToChat('🗳️ 系统', `\n${eliminated[0]} 被投票出局！\n身份是：${eliminatedPlayer.roleInfo.name}`);
+                if (window.addPublicMessage) window.addPublicMessage('🗳️ 系统', `${eliminated[0]} 被投票出局！身份是：${eliminatedPlayer.roleInfo.name}`);
                 console.log(`[狼人杀] ${eliminated[0]}(${eliminatedPlayer.roleInfo.name}) 被投票出局`);
 
                 // 🎙️ 解说点5a：单人出局
@@ -553,6 +568,7 @@ ${context}
                 );
             } else {
                 this.appendToChat('🗳️ 系统', `\n平票！${eliminated.join('、')} 都获得了最高票数，本轮无人出局。`);
+                if (window.addPublicMessage) window.addPublicMessage('🗳️ 系统', `平票！${eliminated.join('、')} 都获得了最高票数，本轮无人出局。`);
 
                 // 🎙️ 解说点5b：平票
                 await this.callCommentator(
@@ -667,6 +683,7 @@ ${context}
 
             if (response && response.trim()) {
                 this.appendToChat('🎙️ 解说员', response.trim());
+                if (window.addPublicMessage) window.addPublicMessage('🎙️ 解说员', response.trim());
                 console.log('[解说员] 解说完成');
             }
 
@@ -706,7 +723,11 @@ ${context}
             });
             
             this.appendToChat('🎮 系统', result);
+            if (window.addPublicMessage) window.addPublicMessage('🎮 系统', `游戏结束！${winnerTeam}阵营获胜！`);
             console.log(`[狼人杀] 游戏结束，${winnerTeam}阵营获胜`);
+
+            // 启用导出按钮
+            $('#export_history').prop('disabled', false);
             
             return true;
         }

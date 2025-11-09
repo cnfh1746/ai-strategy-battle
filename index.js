@@ -538,7 +538,7 @@ class UniversalGameEngine {
 
 // ==================== 游戏消息处理函数 ====================
 // 添加公开消息
-function addPublicMessage(speaker, content) {
+window.addPublicMessage = function(speaker, content) {
     const msg = {
         speaker: speaker,
         content: content,
@@ -553,7 +553,7 @@ function addPublicMessage(speaker, content) {
 }
 
 // 添加私密消息
-function addPrivateMessage(participants, speaker, content) {
+window.addPrivateMessage = function(participants, speaker, content) {
     const msg = {
         speaker: speaker,
         content: content,
@@ -870,6 +870,10 @@ async function fetchGmModels() {
 
 async function startGame() {
     const settings = extension_settings[extensionName];
+
+    // 清空历史记录并禁用导出按钮
+    clearGameHistory();
+    $('#export_history').prop('disabled', true);
     
     // 检查API配置
     const missingConfig = settings.players.filter(p => !p.apiKey);
@@ -1080,6 +1084,32 @@ jQuery(async () => {
                 </div>
             </div>
             
+            <!-- 游戏消息面板 -->
+            <div class="game-messages-section" style="margin-bottom: 15px;">
+                <h4 style="margin: 0 0 10px 0; font-size: 13px; color: #FF5722;">📺 实时游戏流程</h4>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <!-- 左栏：公开消息 -->
+                    <div>
+                        <div style="font-size: 11px; color: #4CAF50; margin-bottom: 5px; font-weight: bold;">📢 公开消息</div>
+                        <div id="publicMessages" style="height: 200px; overflow-y: auto; background: var(--black30a); border: 1px solid #4CAF50; border-radius: 5px; padding: 8px; font-size: 11px;">
+                            <div style="color: #888; text-align: center; padding: 20px;">等待游戏开始...</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 右栏：私密消息 -->
+                    <div>
+                        <div style="font-size: 11px; color: #FF9800; margin-bottom: 5px; font-weight: bold;">🔒 私密消息</div>
+                        <div id="privateMessages" style="height: 200px; overflow-y: auto; background: var(--black30a); border: 1px solid #FF9800; border-radius: 5px; padding: 8px; font-size: 11px;">
+                            <div style="color: #888; text-align: center; padding: 20px;">等待私密信息...</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 导出按钮 -->
+                <button id="export_history" class="menu_button" style="width: 100%; margin-top: 10px; font-size: 12px;" disabled>💾 导出完整历史到酒馆</button>
+            </div>
+            
             <!-- 玩家状态列表 -->
             <div class="players-section" style="margin-bottom: 15px;">
                 <h4 style="cursor: pointer; margin: 0 0 10px 0; font-size: 13px; color: #2196F3;" onclick="$('#players-list').toggle()">
@@ -1152,6 +1182,7 @@ jQuery(async () => {
     $(document).on('click', '#stop_game', stopGame);
     $(document).on('click', '#send-interview', sendInterview);
     $(document).on('click', '#fetch_gm_models', fetchGmModels);  // ⭐ 新增
+    $(document).on('click', '#export_history', exportGameHistoryToTavern); // 导出历史
     
     // 折叠/展开面板
     $(document).on('click', '#toggle-panel', function() {
