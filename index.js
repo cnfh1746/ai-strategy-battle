@@ -274,18 +274,30 @@ ${userMessage}
         const context = getContext();
         
         // 添加新消息到聊天数组
-        context.chat.push({
+        const newMessage = {
             name: speaker,
             is_user: false,
             is_system: false,
             mes: message,
-            send_date: Date.now()
-        });
+            send_date: Date.now(),
+            extra: {}
+        };
+        context.chat.push(newMessage);
         
         const messageIndex = context.chat.length - 1;
         
-        // 触发消息接收事件
-        eventSource.emit(event_types.MESSAGE_RECEIVED, messageIndex);
+        // 🔥 关键修复：使用 setTimeout 确保 DOM 元素先被创建
+        setTimeout(() => {
+            try {
+                // 调用 updateMessageBlock 强制更新 DOM 显示
+                updateMessageBlock(messageIndex, context.chat[messageIndex]);
+                console.log(`[AI对战] ✅ 消息 DOM 已更新，索引: ${messageIndex}`);
+            } catch (error) {
+                console.warn(`[AI对战] ⚠️ updateMessageBlock 调用失败:`, error);
+                // 如果 updateMessageBlock 失败，尝试触发事件
+                eventSource.emit(event_types.MESSAGE_RECEIVED, messageIndex);
+            }
+        }, 0);
         
         // 保存聊天记录
         context.saveChat();
