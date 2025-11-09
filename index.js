@@ -241,11 +241,7 @@ class UniversalGameEngine {
         window.updateGmDebugPanel({ lastTrigger: '游戏开始', contextLength: 0, rawResponse: '', parsedInstruction: '无', secretQueue: '无' });
 
         // 触发GM继续游戏（GM此时的上下文中应包含由世界书触发的游戏规则）
-        const opening = await this.callGM(`🎮 扩展已启动。
-
-当前参与的AI: ${playerList}
-
-请根据你刚才说明的游戏规则继续主持。记得使用【轮到：玩家名】和【秘密指示：玩家名|内容】来协调游戏。`);
+        const opening = await this.callGM(`[SYSTEM] 扩展已启动，现在由你来协调AI行动。请严格根据你之前在聊天中说明的游戏规则和指令格式（【轮到：...】和【秘密指示：...】）来继续主持游戏。`);
         
         window.addActionLog('GM', opening.substring(0, 100));
         
@@ -258,7 +254,7 @@ class UniversalGameEngine {
             }
             
             // 询问GM下一步该做什么
-            const gmInstruction = await this.callGM(`请继续主持游戏，判断下一步行动`);
+            const gmInstruction = await this.callGM(`[SYSTEM] 请根据当前的聊天记录和游戏进展，继续主持游戏，并使用正确的指令格式（【轮到：...】或【秘密指示：...】）来发出下一步行动。`);
             window.addActionLog('GM', gmInstruction.substring(0, 100));
             
             // 检查游戏是否结束
