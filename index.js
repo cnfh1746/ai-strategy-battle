@@ -175,6 +175,19 @@ class UniversalGameEngine {
     async startGame() {
         this.running = true;
         this.paused = false;
+        roundCounter = 0;
+        actionHistory = [];
+        
+        // 初始化UI状态
+        window.updateGameStatus('运行中', 0, 'GM准备中');
+        const initialPlayers = Object.entries(this.apiConfigs).map(([id, config]) => ({
+            name: config.name,
+            active: false,
+            hasSecret: false,
+            lastAction: null
+        }));
+        window.updatePlayersList(initialPlayers);
+        window.addActionLog('系统', '游戏初始化完成');
         
         // 添加游戏规则和玩家名单说明
         const playerList = Object.values(this.apiConfigs).map(c => c.name).join('、');
@@ -209,9 +222,12 @@ class UniversalGameEngine {
 
 请根据游戏规则，宣布游戏正式开始，说明当前游戏状态，然后使用格式【轮到：玩家名】来指定第一个行动的玩家，或使用【秘密指示：玩家名|秘密内容】来分配秘密信息（如角色身份）。`);
         this.appendToChat('🎭 游戏主持', opening);
+        window.addActionLog('GM', opening.substring(0, 100));
         
         // 主循环：让GM指挥游戏进程
         while (this.running) {
+            roundCounter++;
+            window.updateGameStatus(this.paused ? '暂停中' : '运行中', roundCounter, '等待GM指令');
             if (this.paused) {
                 await this.waitForResume();
             }
@@ -227,9 +243,12 @@ class UniversalGameEngine {
 `);
             
             this.appendToChat('🎭 游戏主持', gmInstruction);
+            window.addActionLog('GM', gmInstruction.substring(0, 100));
             
             // 检查游戏是否结束
             if (gmInstruction.includes('游戏结束')) {
+                window.updateGameStatus('已结束', roundCounter, '游戏结束');
+                window.addActionLog('系统', '游戏结束');
                 toastr.success('游戏结束！', 'AI对战');
                 this.stopGame();
                 break;
@@ -246,6 +265,11 @@ class UniversalGameEngine {
                 if (player) {
                     this.addSecret(player.id, secretContent);
                     toastr.info(`已向 ${aiName} 发送秘密信息`, 'AI对战');
+                    
+                    // 更新UI
+                    window.updateGameStatus('运行中', roundCounter, `秘密通知→${aiName}`);
+                    window.addActionLog('GM', `向 ${aiName} 发送秘密信息`);
+                    this.updatePlayersDisplay();
                 } else {
                     // 找不到玩家，提示GM
                     toastr.warning(`找不到玩家"${aiName}"`, 'AI对战');
@@ -258,9 +282,17 @@ class UniversalGameEngine {
                 
                 if (player) {
                     try {
+                        // 更新UI - 轮到这个玩家
+                        window.updateGameStatus('运行中', roundCounter, player.name);
+                        this.updatePlayersDisplay(player.id);
+                        
                         const hasSecret = this.playerSecrets[player.id].length > 0;
                         const response = await this.callPlayerAI(player.id, hasSecret);
                         this.appendToChat(`🎮 ${player.name}`, response);
+                        
+                        // 记录动作
+                        window.addActionLog(player.name, response);
+                        this.updatePlayersDisplay();
                     } catch (error) {
                         console.error(`[AI对战] ${player.name} 行动失败:`, error);
                         this.appendToChat(`🎮 ${player.name}`, '(沉默)');
@@ -346,6 +378,17 @@ class UniversalGameEngine {
         }
     }
     
+    // 更新玩家显示
+    updatePlayersDisplay(activePlayerId = null) {
+        const players = Object.entries(this.apiConfigs).map(([id, config]) => ({
+            name: config.name,
+            active: id === activePlayerId,
+            hasSecret: this.playerSecrets[id].length > 0,
+            lastAction: actionHistory.find(a => a.actor === config.name)?.action.substring(0, 30) || null
+        }));
+        window.updatePlayersList(players);
+    }
+    
     // 停止游戏
     stopGame() {
         this.running = false;
@@ -354,13 +397,70 @@ class UniversalGameEngine {
         $('#start_game').prop('disabled', false);
         $('#continue_game').prop('disabled', true);
         $('#stop_game').prop('disabled', true);
+        
+        // 重置UI
+        window.updateGameStatus('未开始', '-', '-');
+        window.updatePlayersList([]);
     }
 }
 
 // ==================== 全局变量 ====================
 let gameEngine = null;
+let roundCounter = 0;
+let actionHistory = [];
 
 // ==================== UI辅助函数 ====================
+// 更新游戏状态显示
+window.updateGameStatus = function(status, round, currentPlayer) {
+    $('#status-text').text(status).css('color', 
+        status === '运行中' ? '#4CAF50' : 
+        status === '暂停中' ? '#FF9800' : '#888'
+    );
+    $('#round-number').text(round || '-');
+    $('#current-player').text(currentPlayer || '-');
+};
+
+// 更新玩家列表
+window.updatePlayersList = function(players) {
+    if (!players || players.length === 0) {
+        $('#players-list').html('<div style="color: #888; text-align: center; padding: 10px;">游戏未开始</div>');
+        return;
+    }
+    
+    const playersHtml = players.map(p => `
+        <div style="padding: 5px; margin-bottom: 5px; background: var(--black50a); border-radius: 4px; border-left: 3px solid ${p.active ? '#4CAF50' : '#555'};">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-weight: bold; color: ${p.active ? '#4CAF50' : '#ccc'};">${p.name}</span>
+                <span style="font-size: 10px; color: ${p.hasSecret ? '#FF9800' : '#666'};">
+                    ${p.hasSecret ? '🔒 有秘密' : '💬 公开'}
+                </span>
+            </div>
+            ${p.lastAction ? `<div style="font-size: 10px; color: #888; margin-top: 3px;">最后: ${p.lastAction}</div>` : ''}
+        </div>
+    `).join('');
+    
+    $('#players-list').html(playersHtml);
+};
+
+// 添加动作记录
+window.addActionLog = function(actor, action) {
+    const timestamp = new Date().toLocaleTimeString();
+    const logHtml = `
+        <div style="padding: 5px; margin-bottom: 5px; background: var(--black50a); border-radius: 4px; border-left: 2px solid #FF9800;">
+            <div style="color: #FF9800; font-weight: bold; font-size: 10px;">[${timestamp}] ${actor}</div>
+            <div style="color: #ccc; margin-top: 2px;">${action.substring(0, 80)}${action.length > 80 ? '...' : ''}</div>
+        </div>
+    `;
+    
+    actionHistory.unshift({ actor, action, timestamp });
+    if (actionHistory.length > 10) actionHistory.pop();
+    
+    $('#recent-actions').prepend(logHtml);
+    
+    // 只保留最近10条
+    $('#recent-actions > div').slice(10).remove();
+};
+
 window.addPromptLog = function(aiName, prompt, response) {
     const timestamp = new Date().toLocaleTimeString();
     const logHtml = `
@@ -539,23 +639,56 @@ jQuery(async () => {
     
     // 创建浮动控制面板
     const floatingPanel = $(`
-        <div id="ai-battle-panel" style="position: fixed; right: 20px; top: 100px; width: 220px; max-height: 80vh; overflow-y: auto; background: var(--SmartThemeBlurTintColor); border: 2px solid var(--SmartThemeBorderColor); border-radius: 10px; padding: 12px; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.3); display: none; font-size: 12px;">
+        <div id="ai-battle-panel" style="position: fixed; right: 20px; top: 100px; width: 320px; max-height: 85vh; overflow-y: auto; background: var(--SmartThemeBlurTintColor); border: 2px solid var(--SmartThemeBorderColor); border-radius: 10px; padding: 15px; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.3); display: none; font-size: 12px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h3 style="margin: 0; font-size: 14px;">🎮 AI对战控制台</h3>
+                <h3 style="margin: 0; font-size: 15px;">🎮 AI对战控制台</h3>
                 <button id="toggle-panel" class="menu_button" style="padding: 5px 10px;">−</button>
             </div>
             
-            <div class="control-section" style="margin-bottom: 15px;">
+            <!-- 游戏状态区 -->
+            <div class="status-section" style="margin-bottom: 15px; padding: 10px; background: var(--black30a); border-radius: 8px; border-left: 3px solid #4CAF50;">
+                <h4 style="margin: 0 0 8px 0; font-size: 13px; color: #4CAF50;">📊 游戏状态</h4>
+                <div id="game-status" style="font-size: 11px; line-height: 1.6;">
+                    <div>状态: <span id="status-text" style="color: #888;">未开始</span></div>
+                    <div>回合: <span id="round-number">-</span></div>
+                    <div>当前行动: <span id="current-player">-</span></div>
+                </div>
+            </div>
+            
+            <!-- 玩家状态列表 -->
+            <div class="players-section" style="margin-bottom: 15px;">
+                <h4 style="cursor: pointer; margin: 0 0 10px 0; font-size: 13px; color: #2196F3;" onclick="$('#players-list').toggle()">
+                    👥 玩家状态 <span style="font-size: 10px; color: #888;">(点击展开/收起)</span>
+                </h4>
+                <div id="players-list" style="font-size: 11px; background: var(--black30a); padding: 8px; border-radius: 5px; max-height: 150px; overflow-y: auto;">
+                    <div style="color: #888; text-align: center; padding: 10px;">游戏未开始</div>
+                </div>
+            </div>
+            
+            <!-- 最近动作记录 -->
+            <div class="actions-section" style="margin-bottom: 15px;">
+                <h4 style="cursor: pointer; margin: 0 0 10px 0; font-size: 13px; color: #FF9800;" onclick="$('#recent-actions').toggle()">
+                    📜 最近动作 <span style="font-size: 10px; color: #888;">(点击展开/收起)</span>
+                </h4>
+                <div id="recent-actions" style="font-size: 10px; background: var(--black30a); padding: 8px; border-radius: 5px; max-height: 120px; overflow-y: auto;">
+                    <div style="color: #888; text-align: center; padding: 10px;">暂无记录</div>
+                </div>
+            </div>
+            
+            <!-- 控制按钮 -->
+            <div class="control-section" style="margin-bottom: 15px; border-top: 2px solid var(--SmartThemeBorderColor); padding-top: 15px;">
                 <button id="start_game" class="menu_button" style="width: 100%; margin-bottom: 5px;">▶️ 开始游戏</button>
                 <button id="continue_game" class="menu_button" style="width: 100%; margin-bottom: 5px;" disabled>⏭️ 继续游戏</button>
                 <button id="stop_game" class="menu_button" style="width: 100%;" disabled>⏹️ 停止游戏</button>
             </div>
             
-            <div class="prompt-display-section" style="margin-bottom: 15px;">
+            <!-- 提示词记录 -->
+            <div class="prompt-display-section" style="margin-bottom: 15px; border-top: 2px solid var(--SmartThemeBorderColor); padding-top: 15px;">
                 <h4 style="cursor: pointer; margin: 0 0 10px 0; font-size: 13px;" onclick="$('#prompt-logs').toggle()">📝 提示词记录 ▼</h4>
-                <div id="prompt-logs" style="max-height: 200px; overflow-y: auto; background: var(--black50a); padding: 8px; border-radius: 5px; font-size: 11px;"></div>
+                <div id="prompt-logs" style="max-height: 150px; overflow-y: auto; background: var(--black50a); padding: 8px; border-radius: 5px; font-size: 11px;"></div>
             </div>
             
+            <!-- 采访AI -->
             <div class="interview-section" style="border-top: 2px solid var(--SmartThemeBorderColor); padding-top: 15px;">
                 <h4 style="margin: 0 0 10px 0; font-size: 13px;">🎤 采访AI</h4>
                 <select id="interview-target" class="text_pole" style="width: 100%; margin-bottom: 10px; font-size: 12px;">
@@ -563,7 +696,7 @@ jQuery(async () => {
                 </select>
                 <textarea id="interview-question" class="text_pole" placeholder="输入问题（AI会根据秘密信息回答）" style="width: 100%; height: 60px; margin-bottom: 10px; resize: vertical; font-size: 12px;"></textarea>
                 <button id="send-interview" class="menu_button" style="width: 100%; font-size: 12px;">💬 发送采访</button>
-                <div id="interview-response" style="margin-top: 10px; padding: 10px; background: var(--black30a); border-radius: 5px; max-height: 200px; overflow-y: auto; display: none; font-size: 12px;">
+                <div id="interview-response" style="margin-top: 10px; padding: 10px; background: var(--black30a); border-radius: 5px; max-height: 150px; overflow-y: auto; display: none; font-size: 12px;">
                     <strong>回答：</strong>
                     <div id="interview-answer"></div>
                 </div>
