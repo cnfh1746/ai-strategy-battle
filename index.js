@@ -176,10 +176,38 @@ class UniversalGameEngine {
         this.running = true;
         this.paused = false;
         
+        // 添加游戏规则和玩家名单说明
+        const playerList = Object.values(this.apiConfigs).map(c => c.name).join('、');
+        this.appendToChat('🎮 系统', `
+━━━━━━━━━━━━━━━━━━━━
+🎮 游戏开始！
+
+📋 参与玩家：${playerList}
+
+【GM指令格式说明】
+请GM严格使用以下格式之一来指挥游戏：
+
+1️⃣ 让某个AI公开行动：
+   【轮到：AI-Alpha】
+
+2️⃣ 给某个AI秘密信息：
+   【秘密指示：AI-Alpha|你的身份是狼人】
+
+3️⃣ 结束游戏：
+   在回复中说"游戏结束"并宣布结果
+
+⚠️ 请务必使用【】符号和冒号，玩家名字必须完全匹配！
+━━━━━━━━━━━━━━━━━━━━
+`);
+        
         toastr.info('游戏开始！扩展将协调6个AI依次行动', 'AI对战');
         
         // 让GM宣布游戏开始
-        const opening = await this.callGM('作为游戏主持人，根据刚才讨论的规则，宣布游戏正式开始。请简要说明当前游戏状态和第一个需要行动的玩家。');
+        const opening = await this.callGM(`作为游戏主持人，游戏即将开始。
+
+参与玩家：${playerList}
+
+请根据游戏规则，宣布游戏正式开始，说明当前游戏状态，然后使用格式【轮到：玩家名】来指定第一个行动的玩家，或使用【秘密指示：玩家名|秘密内容】来分配秘密信息（如角色身份）。`);
         this.appendToChat('🎭 游戏主持', opening);
         
         // 主循环：让GM指挥游戏进程
@@ -218,6 +246,10 @@ class UniversalGameEngine {
                 if (player) {
                     this.addSecret(player.id, secretContent);
                     toastr.info(`已向 ${aiName} 发送秘密信息`, 'AI对战');
+                } else {
+                    // 找不到玩家，提示GM
+                    toastr.warning(`找不到玩家"${aiName}"`, 'AI对战');
+                    this.appendToChat('🎮 系统', `⚠️ 未找到玩家"${aiName}"，请检查名字是否正确。可用玩家：${playerList}`);
                 }
             } else if (publicMatch) {
                 // 轮到某个AI公开行动
@@ -234,7 +266,27 @@ class UniversalGameEngine {
                         this.appendToChat(`🎮 ${player.name}`, '(沉默)');
                         toastr.error(`${player.name} 响应失败`, 'AI对战');
                     }
+                } else {
+                    // 找不到玩家，提示GM
+                    toastr.warning(`找不到玩家"${aiName}"`, 'AI对战');
+                    this.appendToChat('🎮 系统', `⚠️ 未找到玩家"${aiName}"，请检查名字是否正确。可用玩家：${playerList}`);
                 }
+            } else {
+                // GM回复格式不正确
+                console.warn('[AI对战] GM回复格式错误:', gmInstruction);
+                toastr.warning('GM回复格式不正确，正在提示...', 'AI对战');
+                
+                // 提示GM使用正确格式（但不暂停，继续下一轮）
+                this.appendToChat('🎮 系统', `
+⚠️ GM回复格式不正确！
+
+请使用以下格式之一：
+1. 【轮到：AI-Alpha】（让AI-Alpha公开行动）
+2. 【秘密指示：AI-Alpha|秘密内容】（给AI-Alpha秘密信息）
+3. 说"游戏结束"并宣布结果
+
+当前玩家：${playerList}
+`);
             }
             
             // 暂停等待用户点击"继续"
@@ -244,14 +296,37 @@ class UniversalGameEngine {
         }
     }
     
-    // 查找玩家
+    // 查找玩家（支持模糊匹配）
     findPlayerByName(name) {
-        const cleanName = name.trim();
+        const searchName = name.trim();
+        
+        // 1. 精确匹配
         for (let [id, config] of Object.entries(this.apiConfigs)) {
-            if (config.name === cleanName) {
+            if (config.name === searchName) {
                 return { id, name: config.name };
             }
         }
+        
+        // 2. 忽略大小写和空格匹配
+        const cleanName = searchName.toLowerCase().replace(/\s+/g, '-');
+        for (let [id, config] of Object.entries(this.apiConfigs)) {
+            const configName = config.name.toLowerCase().replace(/\s+/g, '-');
+            if (configName === cleanName) {
+                console.log(`[AI对战] 名字匹配成功: "${searchName}" → "${config.name}"`);
+                return { id, name: config.name };
+            }
+        }
+        
+        // 3. 模糊匹配（包含关系）
+        for (let [id, config] of Object.entries(this.apiConfigs)) {
+            if (config.name.includes(searchName) || searchName.includes(config.name)) {
+                console.warn(`[AI对战] 使用模糊匹配: "${searchName}" → "${config.name}"`);
+                return { id, name: config.name };
+            }
+        }
+        
+        console.error(`[AI对战] 找不到玩家: "${searchName}"，可用玩家:`, 
+                     Object.values(this.apiConfigs).map(c => c.name));
         return null;
     }
     
