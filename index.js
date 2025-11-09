@@ -1,6 +1,6 @@
 // AI策略对战扩展 - 通用版
 import { extension_settings, getContext } from "../../../extensions.js";
-import { saveSettingsDebounced } from "../../../../script.js";
+import { saveSettingsDebounced, updateMessageBlock } from "../../../../script.js";
 import { eventSource, event_types } from "../../../../script.js";
 
 const extensionName = 'ai-strategy-battle';
@@ -269,9 +269,11 @@ ${userMessage}
         return contextText;
     }
     
-    // 添加消息到聊天
+    // 添加消息到聊天 - 实时显示版本
     appendToChat(speaker, message) {
         const context = getContext();
+        
+        // 添加新消息到聊天数组
         context.chat.push({
             name: speaker,
             is_user: false,
@@ -279,8 +281,17 @@ ${userMessage}
             mes: message,
             send_date: Date.now()
         });
+        
+        const messageIndex = context.chat.length - 1;
+        
+        // ⭐ 关键：使用 updateMessageBlock 实时更新 UI
+        updateMessageBlock(messageIndex, context.chat[messageIndex]);
+        
+        // 触发消息接收事件
+        eventSource.emit(event_types.MESSAGE_RECEIVED, messageIndex);
+        
+        // 保存聊天记录
         context.saveChat();
-        eventSource.emit(event_types.MESSAGE_RECEIVED, context.chat.length - 1);
     }
     
     // 游戏主循环
@@ -390,8 +401,19 @@ ${userMessage}
                         this.updatePlayersDisplay();
                     } catch (error) {
                         console.error(`[AI对战] ${player.name} 行动失败:`, error);
-                        this.appendToChat(`🎮 ${player.name}`, '(沉默)');
-                        toastr.error(`${player.name} 响应失败`, 'AI对战');
+                        
+                        // ⭐ 关键改进：向聊天中插入明确的失败通知
+                        const failureMessage = `${player.name} 因技术原因未能响应（API 请求失败）`;
+                        this.appendToChat('🎮 系统', failureMessage);
+                        
+                        // 记录到动作日志
+                        window.addActionLog('系统', `${player.name} 请求失败，视为沉默`);
+                        
+                        // 显示用户通知
+                        toastr.warning(`${player.name} 响应失败，游戏继续`, 'AI对战');
+                        
+                        // ⭐ 继续游戏流程，不中断
+                        this.updatePlayersDisplay();
                     }
                 } else {
                     // 找不到玩家，提示GM
