@@ -764,6 +764,10 @@ function loadSettings() {
     $('#gm_api_key').val(settings.gmApiKey || '');
     $('#gm_model').val(settings.gmModel || 'gpt-4');
 
+    // 加载解说员配置
+    $('#commentatorEnabled').prop('checked', settings.commentatorEnabled || false);
+    $('#commentatorStyle').val(settings.commentatorStyle || '');
+
     // 加载玩家配置
     settings.players.forEach((player, i) => {
         $(`#player${i + 1}_name`).val(player.name);
@@ -787,6 +791,10 @@ function saveSettings() {
     settings.gmApiUrl = $('#gm_api_url').val();
     settings.gmApiKey = $('#gm_api_key').val();
     settings.gmModel = $('#gm_model').val();
+
+    // 保存解说员配置
+    settings.commentatorEnabled = $('#commentatorEnabled').prop('checked');
+    settings.commentatorStyle = $('#commentatorStyle').val().trim();
 
     // 保存玩家配置
     settings.players.forEach((player, i) => {

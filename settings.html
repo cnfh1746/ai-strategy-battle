@@ -33,6 +33,24 @@
     <!-- ⭐ 新增：GM API 配置 -->
     <div style="margin-bottom: 20px; padding: 15px; background: var(--black30a); border-radius: 8px; border-left: 4px solid #4CAF50;">
         <h3 style="margin: 0 0 10px 0; color: #4CAF50;">🤖 GM API 配置</h3>
+        <div class="gm-config-section">
+            <h3>🎙️ 解说员配置</h3>
+            
+            <label class="checkbox_label">
+                <input type="checkbox" id="commentatorEnabled" />
+                <span>启用AI解说员</span>
+            </label>
+            <small>使用GM的API配置生成游戏解说，增加观赏性</small>
+            
+            <label for="commentatorStyle">解说风格（选填）</label>
+            <textarea 
+                id="commentatorStyle" 
+                rows="4" 
+                class="text_pole"
+                style="width: 100%;"
+                placeholder="留空使用默认激情风格。或自定义：如'你是专业冷静的解说员...'"
+            ></textarea>
+        </div>
         <div style="display: flex; gap: 10px; margin-bottom: 10px;">
             <div style="flex: 1;">
                 <label style="display: block; margin-bottom: 5px;">API 地址</label>

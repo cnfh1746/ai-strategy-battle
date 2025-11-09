@@ -180,6 +180,12 @@ export class WerewolfGameEngine {
         console.log(`[狼人杀] 第${this.dayNumber}天 - 夜晚阶段`);
         
         this.appendToChat('🌙 系统', `\n========== 第 ${this.dayNumber} 天 - 夜晚 ==========\n\n天黑请闭眼...`);
+
+        // 🎙️ 解说点1：夜晚开始
+        await this.callCommentator(
+            this.getPublicContext(),
+            `第${this.dayNumber}夜降临，游戏进入夜晚阶段。当前存活玩家：${Object.values(this.players).filter(p => p.isAlive).map(p => p.name).join('、')}`
+        );
         
         // 1. 狼人行动
         await this.werewolvesAction();
@@ -192,6 +198,12 @@ export class WerewolfGameEngine {
         
         // 4. 结算夜晚结果
         await this.resolveNight();
+
+        // 🎙️ 解说点2：夜晚结束，制造悬念
+        await this.callCommentator(
+            this.getPublicContext(),
+            `第${this.dayNumber}夜即将结束，黎明将至。今晚发生了什么？让我们拭目以待...`
+        );
         
         // 5. 进入白天
         await this.startDayPhase();
@@ -405,8 +417,25 @@ ${werewolves.length > 1 ? `你的狼人队友：${werewolves.filter(w => w.id !=
         
         if (deaths.length === 0) {
             this.appendToChat('☀️ 系统', '\n========== 天亮了 ==========\n\n昨晚是平安夜，没有玩家死亡。');
+            
+            // 🎙️ 解说点3a：平安夜
+            await this.callCommentator(
+                this.getPublicContext(),
+                `平安夜！没有玩家死亡。这是暴风雨前的宁静，还是局势的转折？`
+            );
         } else {
             this.appendToChat('☀️ 系统', `\n========== 天亮了 ==========\n\n昨晚死亡的玩家是：${deaths.join('、')}\n\n请存活的玩家依次发言...`);
+            
+            // 🎙️ 解说点3b：有人死亡
+            const deathInfo = deaths.map(name => {
+                const player = Object.values(this.players).find(p => p.name === name);
+                return `${name}`;
+            }).join('、');
+            
+            await this.callCommentator(
+                this.getPublicContext(),
+                `天亮了！${deathInfo}倒下了！这对局势会产生怎样的影响？存活玩家：${Object.values(this.players).filter(p => p.isAlive).map(p => p.name).join('、')}`
+            );
         }
         
         // 检查游戏是否结束
@@ -417,6 +446,13 @@ ${werewolves.length > 1 ? `你的狼人队友：${werewolves.filter(w => w.id !=
         // 所有存活玩家依次发言
         await this.playersSpeech();
         
+        // 🎙️ 解说点4：发言结束
+        const recentSpeeches = this.getRecentSpeeches(alivePlayers.length);
+        await this.callCommentator(
+            recentSpeeches,
+            `发言环节结束！每位玩家都表达了自己的观点。投票即将开始，谁会被送上审判台？`
+        );
+
         // 投票环节
         await this.votingPhase();
     }
@@ -509,8 +545,20 @@ ${context}
                 
                 this.appendToChat('🗳️ 系统', `\n${eliminated[0]} 被投票出局！\n身份是：${eliminatedPlayer.roleInfo.name}`);
                 console.log(`[狼人杀] ${eliminated[0]}(${eliminatedPlayer.roleInfo.name}) 被投票出局`);
+
+                // 🎙️ 解说点5a：单人出局
+                await this.callCommentator(
+                    this.getPublicContext(),
+                    `${eliminated[0]}被投票驱逐，身份是${eliminatedPlayer.roleInfo.name}！这是正确的选择吗？让我们继续观察...`
+                );
             } else {
                 this.appendToChat('🗳️ 系统', `\n平票！${eliminated.join('、')} 都获得了最高票数，本轮无人出局。`);
+
+                // 🎙️ 解说点5b：平票
+                await this.callCommentator(
+                    this.getPublicContext(),
+                    `平票！${eliminated.join('、')}都获得最高票，无人出局！这是巧合还是有人在操纵局势？`
+                );
             }
         }
         
@@ -528,6 +576,104 @@ ${context}
     }
     
     // ==================== 辅助方法 ====================
+
+    getPublicContext() {
+        // 只返回公开聊天记录，不包含秘密信息
+        const context = window.SillyTavern.getContext();
+        const recentChat = context.chat
+            .slice(-20) // 最近20条消息
+            .filter(msg => !msg.mes.includes('[秘密]')) // 过滤秘密消息
+            .map(msg => `${msg.name}: ${msg.mes}`)
+            .join('\n');
+        
+        return recentChat;
+    }
+
+    getPlayerIdByName(name) {
+        for (const id in this.players) {
+            if (this.players[id].name === name) {
+                return id;
+            }
+        }
+        return null;
+    }
+
+    getRecentSpeeches(count = 6) {
+        const context = window.SillyTavern.getContext();
+        const alivePlayerIds = new Set(Object.values(this.players).filter(p => p.isAlive).map(p => p.id));
+        
+        const speeches = context.chat
+            .slice(-count * 2) // 넉넉하게 가져오기
+            .filter(msg => {
+                const playerId = this.getPlayerIdByName(msg.name);
+                return playerId && alivePlayerIds.has(playerId);
+            })
+            .slice(-count)
+            .map(msg => `${msg.name}: ${msg.mes.substring(0, 100)}...`)
+            .join('\n');
+        
+        return speeches;
+    }
+
+    async callCommentator(context, situation) {
+        // 检查是否启用解说员
+        if (!this.settings.commentatorEnabled) {
+            return;
+        }
+
+        try {
+            console.log('[解说员] 准备生成解说...');
+            
+            // 构建解说员提示词
+            const commentatorStyle = this.settings.commentatorStyle || `
+你是狼人杀游戏的金牌解说员，风格特点：
+- 激情澎湃，声情并茂
+- 善于制造悬念和戏剧冲突
+- 使用比喻和夸张手法
+- 短促有力的句子，节奏感强
+- 适当使用"哦！""天哪！""这是什么操作！"等感叹
+
+示例风格：
+"夜幕降临！狼人们在黑暗中蠢蠢欲动，今晚会有谁成为他们的目标？"
+"投票结果出来了！AI-Alpha以微弱优势被送上了审判台，这是正义的裁决还是冤案？"
+            `.trim();
+
+            const prompt = `${commentatorStyle}
+
+【当前情况】
+${situation}
+
+【公开信息】
+${context}
+
+【任务】
+请用激情澎湃的语言对当前情况进行解说，控制在100字左右。
+
+重要约束：
+1. 只能根据公开信息解说
+2. 不能透露玩家的真实身份
+3. 不能透露夜晚的秘密行动
+4. 制造悬念，不要揭晓答案
+5. 不要使用"解说员说"等自我指代
+
+直接输出解说内容即可。`;
+
+            // 复用 callPlayerAI 的底层逻辑
+            const response = await this.callPlayerAI('commentator', prompt, {
+                url: this.settings.gmApiUrl,
+                key: this.settings.gmApiKey,
+                model: this.settings.gmModel
+            });
+
+            if (response && response.trim()) {
+                this.appendToChat('🎙️ 解说员', response.trim());
+                console.log('[解说员] 解说完成');
+            }
+
+        } catch (error) {
+            console.error('[解说员] 解说失败:', error);
+        }
+    }
     
     // 检查游戏是否结束
     checkGameOver() {
