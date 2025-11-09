@@ -153,6 +153,16 @@ class UniversalGameEngine {
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         console.log(`[AI对战][玩家] 🎯 调用玩家: ${config.name}`);
         
+        // ⭐ 新增：显示"AI思考中"提示
+        if (window.addPublicMessage) {
+            window.addPublicMessage('⏳ 系统', `${config.name} 正在思考...`);
+        }
+        window.updateGameStatus(
+            this.paused ? '暂停中' : '运行中', 
+            roundCounter, 
+            `${config.name} 思考中`
+        );
+        
         // 构建提示词
         let prompt = '';
         
@@ -201,6 +211,12 @@ class UniversalGameEngine {
         if (!response.ok) {
             const errorText = await response.text();
             console.error(`[AI对战][玩家] ❌ API错误:`, errorText);
+            
+            // ⭐ 新增：清除"思考中"提示，显示错误
+            if (window.addPublicMessage) {
+                window.addPublicMessage('❌ 系统', `${config.name} 响应失败，跳过该回合`);
+            }
+            
             throw new Error(`API错误 ${response.status}: ${errorText}`);
         }
         
@@ -874,6 +890,17 @@ async function startGame() {
     // 清空历史记录并禁用导出按钮
     clearGameHistory();
     $('#export_history').prop('disabled', true);
+    
+    // ⭐ 新增：强制清空占位符内容，确保容器干净
+    const publicContainer = document.getElementById('publicMessages');
+    const privateContainer = document.getElementById('privateMessages');
+    if (publicContainer) publicContainer.innerHTML = '';
+    if (privateContainer) privateContainer.innerHTML = '';
+    
+    // ⭐ 新增：添加"等待AI启动"的提示
+    if (window.addPublicMessage) {
+        window.addPublicMessage('🎮 系统', '⏳ 游戏初始化中，请稍候...');
+    }
     
     // 检查API配置
     const missingConfig = settings.players.filter(p => !p.apiKey);
