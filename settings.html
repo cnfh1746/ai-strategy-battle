@@ -1,7 +1,21 @@
 <div class="battle-settings-container" style="padding: 15px;">
-    <h3 style="margin-top: 0;">🎮 AI策略对战 - 通用版配置</h3>
+    <h3 style="margin-top: 0;">🎮 AI策略对战配置</h3>
+
+    <!-- 游戏模式选择 -->
+    <div style="margin-bottom: 20px; padding: 15px; background: var(--black30a); border-radius: 8px; border-left: 4px solid #FF5722;">
+        <h3 style="margin: 0 0 10px 0; color: #FF5722;">🎯 游戏模式</h3>
+        <select id="game_mode" class="text_pole" style="width: 100%; font-size: 14px;">
+            <option value="universal">通用模式（依赖世界书/酒馆AI）</option>
+            <option value="werewolf">狼人杀模式（内置规则，无需世界书）</option>
+        </select>
+        <p style="font-size: 12px; color: #888; margin: 10px 0 0 0;">
+            💡 <strong>通用模式</strong>：由酒馆AI（世界书）定义规则，GM根据规则主持<br>
+            🐺 <strong>狼人杀模式</strong>：扩展内置完整狼人杀规则，自动管理游戏流程
+        </p>
+    </div>
 
     <!-- GM 系统提示词配置 -->
+    <div id="universal_mode_settings">
     <div style="margin-bottom: 20px; padding: 15px; background: var(--black30a); border-radius: 8px; border-left: 4px solid #9C27B0;">
         <h3 style="margin: 0 0 10px 0; color: #9C27B0;">🎭 GM 系统提示词</h3>
         <p style="font-size: 12px; color: #888; margin-bottom: 10px;">
@@ -191,6 +205,7 @@
                 <textarea id="player6_custom_prompt" class="text_pole" placeholder="例如：你是理性分析型，擅长通过投票模式找出狼人..." style="width: 100%; height: 80px; margin-top: 10px; resize: vertical;"></textarea>
             </details>
         </div>
+    </div>
     </div>
     
     <button id="save_battle_settings" class="menu_button" style="width: 100%; padding: 12px; font-size: 16px; margin-top: 10px;">💾 保存配置</button>

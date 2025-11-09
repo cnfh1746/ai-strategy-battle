@@ -2,12 +2,14 @@
 import { extension_settings, getContext } from "../../../extensions.js";
 import { saveSettingsDebounced, updateMessageBlock } from "../../../../script.js";
 import { eventSource, event_types } from "../../../../script.js";
+import { WerewolfGameEngine } from "./src/core/werewolf-engine.js";
 
 const extensionName = 'ai-strategy-battle';
 const extensionFolderPath = `scripts/extensions/third-party/${extensionName}/`;
 
 // 默认设置
 const defaultSettings = {
+    gameMode: 'universal',  // 'universal' 或 'werewolf'
     gmSystemPrompt: `你是一个游戏主持人（GM），负责协调多个AI玩家进行游戏。
 
 你的职责：
@@ -26,6 +28,12 @@ const defaultSettings = {
         { id: 'p5', name: 'AI-Echo', apiUrl: '', apiKey: '', model: 'gpt-4', customPrompt: '' },
         { id: 'p6', name: 'AI-Foxtrot', apiUrl: '', apiKey: '', model: 'gpt-4', customPrompt: '' }
     ]
+};
+
+// ==================== 游戏消息存储 ====================
+let gameMessages = {
+    public: [],   // 公开消息：{ speaker, content, timestamp, type: 'public' }
+    private: []   // 私密消息：{ speaker, content, participants: [], timestamp, type: 'private' }
 };
 
 // ==================== 通用游戏引擎 ====================
@@ -69,22 +77,11 @@ class UniversalGameEngine {
             throw new Error(error);
         }
 
-        // 构建完整提示词
+        // 构建上下文
         const currentContext = this.getChatContext();
-        const fullPrompt = `${this.gmSystemPrompt}
-
-[当前游戏状态 - 聊天记录]
-${currentContext}
-
-[系统触发]
-${userMessage}
-
-请根据以上信息继续主持游戏。`;
-
-        console.log('[AI对战][GM] 🎯 完整提示词长度:', fullPrompt.length, '字符');
-        console.log('[AI对战][GM] 🎯 ========== 完整提示词 ==========');
-        console.log(fullPrompt);
-        console.log('[AI对战][GM] 🎯 ========== 提示词结束 ==========');
+        
+        console.log('[AI对战][GM] 🎯 系统提示词:', this.gmSystemPrompt);
+        console.log('[AI对战][GM] 🎯 上下文长度:', currentContext.length, '字符');
 
         // 调用 GM 的独立 API
         try {
@@ -539,6 +536,133 @@ ${userMessage}
     }
 }
 
+// ==================== 游戏消息处理函数 ====================
+// 添加公开消息
+function addPublicMessage(speaker, content) {
+    const msg = {
+        speaker: speaker,
+        content: content,
+        timestamp: Date.now(),
+        type: 'public'
+    };
+    
+    gameMessages.public.push(msg);
+    displayPublicMessage(msg);
+    
+    console.log('[游戏面板] 添加公开消息:', speaker, content.substring(0, 50));
+}
+
+// 添加私密消息
+function addPrivateMessage(participants, speaker, content) {
+    const msg = {
+        speaker: speaker,
+        content: content,
+        participants: participants,
+        timestamp: Date.now(),
+        type: 'private'
+    };
+    
+    gameMessages.private.push(msg);
+    displayPrivateMessage(msg);
+    
+    console.log('[游戏面板] 添加私密消息:', speaker, '→', participants.join(','));
+}
+
+// 显示公开消息
+function displayPublicMessage(msg) {
+    const container = document.getElementById('publicMessages');
+    if (!container) return;
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message-item ${msg.speaker === 'GM' || msg.speaker === '🎮 GM' ? 'gm' : 'player'}`;
+    
+    const time = new Date(msg.timestamp).toLocaleTimeString();
+    
+    messageDiv.innerHTML = `
+        <div class="message-speaker">${msg.speaker}:</div>
+        <div class="message-content">${msg.content}</div>
+        <div class="message-timestamp">${time}</div>
+    `;
+    
+    container.appendChild(messageDiv);
+    container.scrollTop = container.scrollHeight;
+}
+
+// 显示私密消息
+function displayPrivateMessage(msg) {
+    const container = document.getElementById('privateMessages');
+    if (!container) return;
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message-item private';
+    
+    const time = new Date(msg.timestamp).toLocaleTimeString();
+    
+    messageDiv.innerHTML = `
+        <div class="message-speaker">${msg.speaker}:</div>
+        <div class="message-content">${msg.content}</div>
+        <div class="private-participants">👥 ${msg.participants.join(', ')}</div>
+        <div class="message-timestamp">${time}</div>
+    `;
+    
+    container.appendChild(messageDiv);
+    container.scrollTop = container.scrollHeight;
+}
+
+// 清空游戏历史
+function clearGameHistory() {
+    gameMessages = { public: [], private: [] };
+    
+    const publicContainer = document.getElementById('publicMessages');
+    const privateContainer = document.getElementById('privateMessages');
+    
+    if (publicContainer) publicContainer.innerHTML = '';
+    if (privateContainer) privateContainer.innerHTML = '';
+    
+    console.log('[游戏面板] 历史已清空');
+}
+
+// 导出完整游戏历史到酒馆
+function exportGameHistoryToTavern() {
+    console.log('[导出] 开始导出游戏历史到酒馆...');
+    
+    const allMessages = [
+        ...gameMessages.public.map(m => ({...m, area: 'public'})),
+        ...gameMessages.private.map(m => ({...m, area: 'private'}))
+    ].sort((a, b) => a.timestamp - b.timestamp);
+    
+    let exportText = '\n\n========== 🎮 AI大乱斗对局记录 ==========\n\n';
+    
+    allMessages.forEach(msg => {
+        const time = new Date(msg.timestamp).toLocaleTimeString();
+        
+        if (msg.area === 'public') {
+            exportText += `[公开 ${time}] ${msg.speaker}: ${msg.content}\n\n`;
+        } else {
+            const participants = msg.participants.join(', ');
+            exportText += `[私密 ${time}] 👥 ${participants}\n`;
+            exportText += `${msg.speaker}: ${msg.content}\n\n`;
+        }
+    });
+    
+    exportText += '========== 对局结束 ==========\n';
+    
+    const context = SillyTavern.getContext();
+    context.chat.push({
+        name: 'System',
+        mes: exportText,
+        is_system: true,
+        is_user: false,
+        send_date: Date.now()
+    });
+    
+    context.saveChat();
+    context.reloadCurrentChat();
+    
+    toastr.success('游戏历史已导出到酒馆聊天！');
+    console.log('[导出] 完成！共导出', allMessages.length, '条消息');
+}
+
 // ==================== 全局变量 ====================
 let gameEngine = null;
 let roundCounter = 0;
@@ -629,6 +753,9 @@ function loadSettings() {
     }
     const settings = extension_settings[extensionName];
     
+    // 加载游戏模式
+    $('#game_mode').val(settings.gameMode || 'universal');
+    
     // 加载 GM 系统提示词
     $('#gm_system_prompt').val(settings.gmSystemPrompt || defaultSettings.gmSystemPrompt);
 
@@ -649,6 +776,9 @@ function loadSettings() {
 
 function saveSettings() {
     const settings = extension_settings[extensionName];
+    
+    // 保存游戏模式
+    settings.gameMode = $('#game_mode').val();
     
     // 保存 GM 系统提示词
     settings.gmSystemPrompt = $('#gm_system_prompt').val();
@@ -744,7 +874,72 @@ async function startGame() {
     $('#stop_game').prop('disabled', false);
     
     try {
-        gameEngine = new UniversalGameEngine(settings);
+        // 根据游戏模式选择引擎
+        const gameMode = settings.gameMode || 'universal';
+        
+        if (gameMode === 'werewolf') {
+            // 狼人杀模式
+            console.log('[AI对战] 🐺 启动狼人杀模式');
+            toastr.info('启动狼人杀模式...', 'AI对战');
+            
+            gameEngine = new WerewolfGameEngine(
+                settings,
+                (speaker, message) => {
+                    const context = getContext();
+                    const newMessage = {
+                        name: speaker,
+                        is_user: false,
+                        is_system: false,
+                        mes: message,
+                        send_date: Date.now(),
+                        extra: {}
+                    };
+                    context.chat.push(newMessage);
+                    const messageIndex = context.chat.length - 1;
+                    setTimeout(() => {
+                        try {
+                            updateMessageBlock(messageIndex, context.chat[messageIndex]);
+                        } catch (error) {
+                            eventSource.emit(event_types.MESSAGE_RECEIVED, messageIndex);
+                        }
+                    }, 0);
+                    context.saveChat();
+                },
+                async (playerId, prompt) => {
+                    const config = settings.players.find(p => p.id === playerId);
+                    if (!config || !config.apiKey) {
+                        throw new Error(`玩家 ${playerId} API未配置`);
+                    }
+                    
+                    const apiUrl = (config.apiUrl || 'https://api.openai.com/v1').replace(/\/$/, '') + '/chat/completions';
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${config.apiKey}`
+                        },
+                        body: JSON.stringify({
+                            model: config.model,
+                            messages: [{ role: 'user', content: prompt }],
+                            temperature: 0.7,
+                            max_tokens: 1500
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(`API错误 ${response.status}: ${errorText}`);
+                    }
+                    
+                    const data = await response.json();
+                    return data.choices[0].message.content;
+                }
+            );
+        } else {
+            // 通用模式
+            console.log('[AI对战] 🎮 启动通用模式');
+            gameEngine = new UniversalGameEngine(settings);
+        }
         
         // 更新采访目标选择器
         $('#interview-target').empty().append('<option value="">选择要采访的AI...</option>');
