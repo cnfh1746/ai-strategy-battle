@@ -284,9 +284,6 @@ ${userMessage}
         
         const messageIndex = context.chat.length - 1;
         
-        // ⭐ 关键：使用 updateMessageBlock 实时更新 UI
-        updateMessageBlock(messageIndex, context.chat[messageIndex]);
-        
         // 触发消息接收事件
         eventSource.emit(event_types.MESSAGE_RECEIVED, messageIndex);
         
