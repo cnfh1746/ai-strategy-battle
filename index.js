@@ -41,9 +41,26 @@ class UniversalGameEngine {
     
     // 调用酒馆AI（GM）
     async callGM(prompt) {
-        const generateRaw = window.generateRaw || window.Generate?.generateRaw;
-        if (!generateRaw) throw new Error('找不到SillyTavern生成函数');
-        return await generateRaw(prompt, '', false, false);
+        // 尝试多种方式获取生成函数
+        const generateRaw = window.generateRaw || 
+                          window.Generate?.generateRaw || 
+                          getContext()?.generateRaw ||
+                          SillyTavern?.getContext?.()?.generateRaw;
+        
+        if (!generateRaw) {
+            console.error('[AI对战] 无法找到生成函数，尝试的路径:', {
+                'window.generateRaw': typeof window.generateRaw,
+                'window.Generate': typeof window.Generate,
+                'getContext()': typeof getContext(),
+                'SillyTavern': typeof window.SillyTavern
+            });
+            throw new Error('找不到SillyTavern生成函数。请确保在聊天界面中启动游戏。');
+        }
+        
+        console.log('[AI对战] 调用GM，提示词:', prompt.substring(0, 100) + '...');
+        const response = await generateRaw(prompt, '', false, false);
+        console.log('[AI对战] GM回复:', response.substring(0, 100) + '...');
+        return response;
     }
     
     // 调用玩家AI（可以包含秘密信息）

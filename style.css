@@ -54,10 +54,22 @@
     border-radius: 8px;
     padding: 15px;
     margin: 20px 0;
+    width: 600px;
+    height: 500px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.game-container.expanded {
+    width: 900px;
+    height: 700px;
 }
 
 .game-header {
-    text-align: center;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     border-bottom: 2px solid #444;
     padding-bottom: 10px;
     margin-bottom: 15px;
@@ -66,18 +78,196 @@
 .game-header h2 {
     margin: 0;
     color: #4a9eff;
+    font-size: 18px;
 }
 
-#game-status {
-    margin-top: 5px;
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.icon-btn {
+    background: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 5px;
+    color: #4a9eff;
+    cursor: pointer;
+    padding: 5px 10px;
+    font-size: 16px;
+    transition: all 0.2s;
+}
+
+.icon-btn:hover {
+    background: #3a3a3a;
+    border-color: #4a9eff;
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #2a2a2a;
+    padding: 5px 12px;
+    border-radius: 5px;
+    border: 1px solid #444;
+}
+
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+.status-dot.running {
+    background: #4aff4a;
+    box-shadow: 0 0 5px #4aff4a;
+}
+
+.status-dot.paused {
+    background: #ffaa44;
+    box-shadow: 0 0 5px #ffaa44;
+}
+
+.status-dot.ended {
+    background: #ff4444;
+    box-shadow: 0 0 5px #ff4444;
+}
+
+.status-dot.waiting {
+    background: #888;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.status-text {
+    font-size: 13px;
+    color: #ccc;
+}
+
+.game-content {
+    display: flex;
+    gap: 15px;
+    height: calc(100% - 120px);
+    overflow: hidden;
+}
+
+.monitor-panel {
+    flex: 0 0 220px;
+    background: #0a0a0a;
+    border: 1px solid #444;
+    border-radius: 5px;
+    padding: 10px;
+    overflow-y: auto;
+}
+
+.monitor-section {
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #333;
+}
+
+.monitor-section:last-child {
+    border-bottom: none;
+}
+
+.monitor-section h3 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    color: #4a9eff;
+}
+
+.monitor-item {
+    display: flex;
+    justify-content: space-between;
+    margin: 8px 0;
+    font-size: 12px;
+}
+
+.monitor-item .label {
     color: #888;
+}
+
+.monitor-item .value {
+    color: #4aff4a;
+    font-weight: bold;
+}
+
+.monitor-player {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px;
+    margin: 5px 0;
+    background: #1a1a1a;
+    border-radius: 3px;
+    font-size: 12px;
+}
+
+.monitor-player.dead {
+    opacity: 0.5;
+}
+
+.player-icon {
+    font-size: 10px;
+}
+
+.player-name {
+    flex: 1;
+    font-weight: bold;
+}
+
+.player-role {
+    color: #888;
+    font-size: 11px;
+}
+
+.recent-actions {
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.action-item {
+    padding: 5px;
+    margin: 5px 0;
+    background: #1a1a1a;
+    border-radius: 3px;
+    font-size: 11px;
+    border-left: 2px solid #444;
+}
+
+.action-item.latest {
+    border-left-color: #4aff4a;
+    background: #1a2a1a;
+}
+
+.action-time {
+    color: #888;
+    margin-right: 8px;
+    font-family: monospace;
+}
+
+.action-text {
+    color: #ccc;
+}
+
+.main-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow: hidden;
 }
 
 .players-panel {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    margin-bottom: 15px;
+    gap: 8px;
+    flex: 0 0 auto;
 }
 
 .player-card {
@@ -115,7 +305,7 @@
     border: 1px solid #444;
     border-radius: 5px;
     padding: 10px;
-    height: 400px;
+    flex: 1;
     overflow-y: auto;
     font-family: monospace;
     font-size: 13px;
@@ -175,8 +365,62 @@
 }
 
 .game-controls {
-    margin-top: 15px;
+    position: absolute;
+    bottom: 15px;
+    left: 15px;
+    right: 15px;
     text-align: center;
+}
+
+/* 调整大小手柄 */
+.resize-handle {
+    position: absolute;
+    background: transparent;
+    z-index: 10;
+}
+
+.resize-right {
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 8px;
+    cursor: ew-resize;
+}
+
+.resize-right:hover {
+    background: rgba(74, 158, 255, 0.3);
+}
+
+.resize-bottom {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 8px;
+    cursor: ns-resize;
+}
+
+.resize-bottom:hover {
+    background: rgba(74, 158, 255, 0.3);
+}
+
+.resize-corner {
+    right: 0;
+    bottom: 0;
+    width: 15px;
+    height: 15px;
+    cursor: nwse-resize;
+}
+
+.resize-corner::after {
+    content: '';
+    position: absolute;
+    right: 2px;
+    bottom: 2px;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 0 0 10px 10px;
+    border-color: transparent transparent #4a9eff transparent;
 }
 
 #next_step {
