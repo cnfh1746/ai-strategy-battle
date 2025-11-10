@@ -1,112 +1,112 @@
-&lt;div class=&quot;battle-settings-container&quot; style=&quot;padding: 15px;&quot;&gt;
-    &lt;h3 style=&quot;margin-top: 0;&quot;&gt;🎮 AI策略对战配置&lt;/h3&gt;
+<div class="battle-settings-container" style="padding: 15px;">
+    <h3 style="margin-top: 0;">🎮 AI策略对战配置</h3>
 
-    &lt;!-- 游戏模式选择 --&gt;
-    &lt;div class=&quot;settings-section&quot;&gt;
-        &lt;h3 class=&quot;section-title&quot; style=&quot;color: #FF5722;&quot;&gt;🎯 游戏模式&lt;/h3&gt;
-        &lt;select id=&quot;game_mode&quot; class=&quot;text_pole&quot; style=&quot;width: 100%; font-size: 14px;&quot;&gt;
-            &lt;option value=&quot;universal&quot;&gt;通用模式（依赖世界书/酒馆AI）&lt;/option&gt;
-            &lt;option value=&quot;werewolf&quot;&gt;狼人杀模式（内置规则，无需世界书）&lt;/option&gt;
-        &lt;/select&gt;
-        &lt;p class=&quot;section-description&quot;&gt;
-            💡 &lt;strong&gt;通用模式&lt;/strong&gt;：由酒馆AI（世界书）定义规则，GM根据规则主持&lt;br&gt;
-            🐺 &lt;strong&gt;狼人杀模式&lt;/strong&gt;：扩展内置完整狼人杀规则，自动管理游戏流程
-        &lt;/p&gt;
-    &lt;/div&gt;
+    <!-- 游戏模式选择 -->
+    <div class="settings-section">
+        <h3 class="section-title" style="color: #FF5722;">🎯 游戏模式</h3>
+        <select id="game_mode" class="text_pole" style="width: 100%; font-size: 14px;">
+            <option value="universal">通用模式（依赖世界书/酒馆AI）</option>
+            <option value="werewolf">狼人杀模式（内置规则，无需世界书）</option>
+        </select>
+        <p class="section-description">
+            💡 <strong>通用模式</strong>：由酒馆AI（世界书）定义规则，GM根据规则主持<br>
+            🐺 <strong>狼人杀模式</strong>：扩展内置完整狼人杀规则，自动管理游戏流程
+        </p>
+    </div>
 
-    &lt;!-- GM 设置 --&gt;
-    &lt;div id=&quot;gm_settings_container&quot;&gt;
-        &lt;div class=&quot;settings-section&quot; id=&quot;gm_system_prompt_section&quot;&gt;
-            &lt;h3 class=&quot;section-title&quot; style=&quot;color: #9C27B0;&quot;&gt;🎭 GM 系统提示词&lt;/h3&gt;
-            &lt;p class=&quot;section-description&quot;&gt;
+    <!-- GM 设置 -->
+    <div id="gm_settings_container">
+        <div class="settings-section" id="gm_system_prompt_section">
+            <h3 class="section-title" style="color: #9C27B0;">🎭 GM 系统提示词</h3>
+            <p class="section-description">
                 这段提示词会在每次调用 GM 时自动附加，用于明确 GM 的身份和任务。
-            &lt;/p&gt;
-            &lt;textarea id=&quot;gm_system_prompt&quot; class=&quot;text_pole&quot; rows=&quot;6&quot; style=&quot;width: 100%; resize: vertical;&quot;&gt;你是一个游戏主持人（GM），负责协调多个AI玩家进行游戏。
+            </p>
+            <textarea id="gm_system_prompt" class="text_pole" rows="6" style="width: 100%; resize: vertical;">你是一个游戏主持人（GM），负责协调多个AI玩家进行游戏。
 
 你的职责：
 1. 严格根据聊天记录中的游戏规则主持游戏
 2. 使用【轮到：玩家名】来指定某个玩家公开行动
 3. 使用【秘密指示：玩家名|内容】来给某个玩家发送秘密信息
-4. 绝对不要偏离当前游戏主题，不要回答无关问题&lt;/textarea&gt;
-        &lt;/div&gt;
+4. 绝对不要偏离当前游戏主题，不要回答无关问题</textarea>
+        </div>
 
-        &lt;div class=&quot;settings-section&quot;&gt;
-            &lt;h3 class=&quot;section-title&quot; style=&quot;color: #4CAF50;&quot;&gt;🤖 GM &amp; 解说员 API 配置&lt;/h3&gt;
-            &lt;div id=&quot;commentator_section&quot; style=&quot;margin-bottom: 15px;&quot;&gt;
-                &lt;label class=&quot;checkbox_label&quot;&gt;
-                    &lt;input type=&quot;checkbox&quot; id=&quot;commentatorEnabled&quot; /&gt;
-                    &lt;span&gt;启用AI解说员（仅狼人杀模式）&lt;/span&gt;
-                &lt;/label&gt;
-                &lt;small&gt;使用下方API配置生成游戏解说，增加观赏性&lt;/small&gt;
-                &lt;textarea 
-                    id=&quot;commentatorStyle&quot; 
-                    rows=&quot;3&quot; 
-                    class=&quot;text_pole&quot;
-                    style=&quot;width: 100%; margin-top: 5px;&quot;
-                    placeholder=&quot;解说风格（选填）：留空使用默认激情风格。或自定义：如'你是专业冷静的解说员...'&quot;
-                &gt;&lt;/textarea&gt;
-            &lt;/div&gt;
+        <div class="settings-section">
+            <h3 class="section-title" style="color: #4CAF50;">🤖 GM & 解说员 API 配置</h3>
+            <div id="commentator_section" style="margin-bottom: 15px;">
+                <label class="checkbox_label">
+                    <input type="checkbox" id="commentatorEnabled" />
+                    <span>启用AI解说员（仅狼人杀模式）</span>
+                </label>
+                <small>使用下方API配置生成游戏解说，增加观赏性</small>
+                <textarea 
+                    id="commentatorStyle" 
+                    rows="3" 
+                    class="text_pole"
+                    style="width: 100%; margin-top: 5px;"
+                    placeholder="解说风格（选填）：留空使用默认激情风格。或自定义：如'你是专业冷静的解说员...'"
+                ></textarea>
+            </div>
             
-            &lt;div style=&quot;display: flex; gap: 10px; margin-bottom: 10px;&quot;&gt;
-                &lt;div style=&quot;flex: 1;&quot;&gt;
-                    &lt;label&gt;API 地址&lt;/label&gt;
-                    &lt;input id=&quot;gm_api_url&quot; type=&quot;text&quot; class=&quot;text_pole&quot; style=&quot;width: 100%;&quot; placeholder=&quot;https://api.openai.com/v1&quot; /&gt;
-                &lt;/div&gt;
-                &lt;div style=&quot;flex: 1;&quot;&gt;
-                    &lt;label&gt;
+            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                <div style="flex: 1;">
+                    <label>API 地址</label>
+                    <input id="gm_api_url" type="text" class="text_pole" style="width: 100%;" placeholder="https://api.openai.com/v1" />
+                </div>
+                <div style="flex: 1;">
+                    <label>
                         模型
-                        &lt;button id=&quot;fetch_gm_models&quot; class=&quot;menu_button&quot; style=&quot;padding: 2px 8px; margin-left: 5px; font-size: 11px;&quot;&gt;🔄 拉取&lt;/button&gt;
-                    &lt;/label&gt;
-                    &lt;select id=&quot;gm_model&quot; class=&quot;text_pole&quot; style=&quot;width: 100%;&quot;&gt;&lt;/select&gt;
-                &lt;/div&gt;
-            &lt;/div&gt;
-            &lt;div&gt;
-                &lt;label&gt;API Key&lt;/label&gt;
-                &lt;input id=&quot;gm_api_key&quot; type=&quot;password&quot; class=&quot;text_pole&quot; style=&quot;width: 100%;&quot; placeholder=&quot;sk-...&quot; /&gt;
-            &lt;/div&gt;
-        &lt;/div&gt;
-    &lt;/div&gt;
+                        <button id="fetch_gm_models" class="menu_button" style="padding: 2px 8px; margin-left: 5px; font-size: 11px;">🔄 拉取</button>
+                    </label>
+                    <select id="gm_model" class="text_pole" style="width: 100%;"></select>
+                </div>
+            </div>
+            <div>
+                <label>API Key</label>
+                <input id="gm_api_key" type="password" class="text_pole" style="width: 100%;" placeholder="sk-..." />
+            </div>
+        </div>
+    </div>
     
-    &lt;!-- 6个AI配置 --&gt;
-    &lt;div class=&quot;players-config&quot; id=&quot;players_config_container&quot;&gt;
-        &lt;!-- Player configs will be generated by JS --&gt;
-    &lt;/div&gt;
+    <!-- 6个AI配置 -->
+    <div class="players-config" id="players_config_container">
+        <!-- Player configs will be generated by JS -->
+    </div>
     
-    &lt;button id=&quot;save_battle_settings&quot; class=&quot;menu_button&quot; style=&quot;width: 100%; padding: 12px; font-size: 16px; margin-top: 20px;&quot;&gt;💾 保存配置&lt;/button&gt;
-&lt;/div&gt;
+    <button id="save_battle_settings" class="menu_button" style="width: 100%; padding: 12px; font-size: 16px; margin-top: 20px;">💾 保存配置</button>
+</div>
 
-&lt;!-- Player Template --&gt;
-&lt;template id=&quot;player_config_template&quot;&gt;
-    &lt;div class=&quot;settings-section ai-player-config&quot;&gt;
-        &lt;h4 style=&quot;margin-top: 0; color: var(--SmartThemeQuoteColor);&quot;&gt;👤 玩家 {PLAYER_NUM}&lt;/h4&gt;
-        &lt;div style=&quot;margin-bottom: 10px;&quot;&gt;
-            &lt;label&gt;游戏中的名称（GM会用这个名字称呼）&lt;/label&gt;
-            &lt;input type=&quot;text&quot; id=&quot;player{PLAYER_NUM}_name&quot; class=&quot;text_pole&quot; style=&quot;width: 100%;&quot;&gt;
-        &lt;/div&gt;
-        &lt;div style=&quot;margin-bottom: 10px;&quot;&gt;
-            &lt;label&gt;API URL&lt;/label&gt;
-            &lt;input type=&quot;text&quot; id=&quot;player{PLAYER_NUM}_api_url&quot; class=&quot;text_pole&quot; style=&quot;width: 100%;&quot;&gt;
-        &lt;/div&gt;
-        &lt;div style=&quot;margin-bottom: 10px;&quot;&gt;
-            &lt;label&gt;API Key&lt;/label&gt;
-            &lt;input type=&quot;password&quot; id=&quot;player{PLAYER_NUM}_api_key&quot; class=&quot;text_pole&quot; style=&quot;width: 100%;&quot;&gt;
-        &lt;/div&gt;
-        &lt;div style=&quot;margin-bottom: 10px;&quot;&gt;
-            &lt;label&gt;模型&lt;/label&gt;
-            &lt;div style=&quot;display: flex; gap: 5px;&quot;&gt;
-                &lt;select id=&quot;player{PLAYER_NUM}_model&quot; class=&quot;text_pole&quot; style=&quot;width: 100%;&quot;&gt;&lt;/select&gt;
-                &lt;button id=&quot;fetch_player{PLAYER_NUM}_models&quot; class=&quot;menu_button&quot; title=&quot;拉取模型列表&quot;&gt;🔄&lt;/button&gt;
-                &lt;button id=&quot;test_player{PLAYER_NUM}_api&quot; class=&quot;menu_button&quot; title=&quot;测试API连接&quot;&gt;✓&lt;/button&gt;
-            &lt;/div&gt;
-        &lt;/div&gt;
-        &lt;details style=&quot;margin-top: 10px;&quot;&gt;
-            &lt;summary style=&quot;cursor: pointer; color: var(--SmartThemeBodyColor); font-weight: bold;&quot;&gt;⚙️ 高级：自定义人格提示词（可选）&lt;/summary&gt;
-            &lt;textarea id=&quot;player{PLAYER_NUM}_custom_prompt&quot; class=&quot;text_pole&quot; placeholder=&quot;例如：你性格谨慎，不轻易相信他人...&quot; style=&quot;width: 100%; height: 80px; margin-top: 10px; resize: vertical;&quot;&gt;&lt;/textarea&gt;
-        &lt;/details&gt;
-    &lt;/div&gt;
-&lt;/template&gt;
+<!-- Player Template -->
+<template id="player_config_template">
+    <div class="settings-section ai-player-config">
+        <h4 style="margin-top: 0; color: var(--SmartThemeQuoteColor);">👤 玩家 {PLAYER_NUM}</h4>
+        <div style="margin-bottom: 10px;">
+            <label>游戏中的名称（GM会用这个名字称呼）</label>
+            <input type="text" id="player{PLAYER_NUM}_name" class="text_pole" style="width: 100%;">
+        </div>
+        <div style="margin-bottom: 10px;">
+            <label>API URL</label>
+            <input type="text" id="player{PLAYER_NUM}_api_url" class="text_pole" style="width: 100%;">
+        </div>
+        <div style="margin-bottom: 10px;">
+            <label>API Key</label>
+            <input type="password" id="player{PLAYER_NUM}_api_key" class="text_pole" style="width: 100%;">
+        </div>
+        <div style="margin-bottom: 10px;">
+            <label>模型</label>
+            <div style="display: flex; gap: 5px;">
+                <select id="player{PLAYER_NUM}_model" class="text_pole" style="width: 100%;"></select>
+                <button id="fetch_player{PLAYER_NUM}_models" class="menu_button" title="拉取模型列表">🔄</button>
+                <button id="test_player{PLAYER_NUM}_api" class="menu_button" title="测试API连接">✓</button>
+            </div>
+        </div>
+        <details style="margin-top: 10px;">
+            <summary style="cursor: pointer; color: var(--SmartThemeBodyColor); font-weight: bold;">⚙️ 高级：自定义人格提示词（可选）</summary>
+            <textarea id="player{PLAYER_NUM}_custom_prompt" class="text_pole" placeholder="例如：你性格谨慎，不轻易相信他人..." style="width: 100%; height: 80px; margin-top: 10px; resize: vertical;"></textarea>
+        </details>
+    </div>
+</template>
 
-&lt;style&gt;
+<style>
     .settings-section {
         margin-bottom: 20px;
         padding: 15px;
@@ -121,4 +121,4 @@
         color: #888;
         margin: 10px 0 0 0;
     }
-&lt;/style&gt;
+</style>
