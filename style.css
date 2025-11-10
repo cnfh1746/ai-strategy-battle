@@ -86,3 +86,40 @@
 #privateMessages::-webkit-scrollbar-thumb:hover {
     background: #FFD700;
 }
+
+/* Tab 样式 */
+.tab-nav {
+    display: flex;
+    border-bottom: 1px solid var(--SmartThemeBorderColor);
+    margin-bottom: 10px;
+}
+
+.tab-button {
+    padding: 8px 15px;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    color: #888;
+    font-size: 13px;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.tab-button:hover {
+    background: var(--black30a);
+    color: #ccc;
+}
+
+.tab-button.active {
+    color: var(--SmartThemeLinkColor);
+    border-bottom-color: var(--SmartThemeLinkColor);
+    font-weight: bold;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
