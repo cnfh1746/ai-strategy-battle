@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI策略对战 - 视觉Demo</title>
+    <style>
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --accent: #f093fb;
+            --bg-primary: #0f0f1e;
+            --bg-glass: rgba(20, 20, 40, 0.85);
+            --success: #4caf50;
+            --error: #f44336;
+            --info: #2196f3;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+            --glow-primary: 0 0 20px rgba(102, 126, 234, 0.6);
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.15) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 80%, rgba(118, 75, 162, 0.15) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .container { max-width: 1400px; margin: 0 auto; padding: 32px; }
+
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+            animation: fadeInDown 0.6s ease-out;
+        }
+
+        .header h1 {
+            font-size: 48px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        .header p { color: var(--text-secondary); font-size: 18px; }
+
+        .panel {
+            background: var(--bg-glass);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: var(--shadow-lg);
+            margin-bottom: 32px;
+            animation: fadeInUp 0.6s ease-out 0.2s backwards;
+        }
+
+        .section {
+            margin-bottom: 24px;
+            padding: 16px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 12px;
+            border-left: 3px solid var(--primary);
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .section:hover {
+            transform: translateY(-2px);
+            border-color: var(--accent);
+            box-shadow: 0 0 30px rgba(102, 126, 234, 0.3);
+        }
+
+        .section:hover::before { left: 100%; }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .players-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .player-card {
+            background: linear-gradient(145deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+            border: 2px solid transparent;
+            border-radius: 12px;
+            padding: 16px;
+            position: relative;
+            transition: all 0.3s;
+            animation: fadeInUp 0.6s ease-out backwards;
+        }
+
+        .player-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 12px;
+            padding: 2px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .player-card:hover::before { opacity: 1; }
+        .player-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-lg); }
+        .player-card:nth-child(1) { animation-delay: 0.1s; }
+        .player-card:nth-child(2) { animation-delay: 0.2s; }
+        .player-card:nth-child(3) { animation-delay: 0.3s; }
+
+        .player-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+
+        .player-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            box-shadow: var(--glow-primary);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .player-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            background: rgba(76, 175, 80, 0.2);
+            color: var(--success);
+        }
+
+        .input {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: all 0.3s;
+            margin-bottom: 12px;
+        }
+
+        .input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2), var(--glow-primary);
+            transform: scale(1.02);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:hover::before { left: 100%; }
+
+        .control-panel {
+            background: var(--bg-glass);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: var(--shadow-lg);
+            animation: fadeInUp 0.6s ease-out 0.4s backwards;
+        }
+
+        .status-bar {
+            display: flex;
+            gap: 24px;
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            margin-bottom: 24px;
+        }
+
+        .status-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .status-label {
+            font-size: 11px;
+            color: #808080;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .status-value {
+            font-size: 24px;
+            font-weight: bold;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .progress-bar {
+            flex: 2;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            align-self: center;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            width: 60%;
+            box-shadow: var(--glow-primary);
+            animation: progressPulse 1.5s ease-in-out infinite;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 250px 1fr 200px;
+            gap: 24px;
+            min-height: 400px;
+        }
+
+        .column {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .message-item {
+            padding: 8px;
+            margin-bottom: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            border-left: 3px solid var(--info);
+            animation: slideInRight 0.4s ease-out;
+        }
+
+        .message-speaker {
+            font-weight: bold;
+            color: var(--accent);
+            font-size: 13px;
+        }
+
+        .message-content {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        .action-btn {
+            width: 100%;
+            padding: 16px;
+            margin-bottom: 8px;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .action-btn::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+        }
+
+        .action-btn:hover::after {
+            width: 300px;
+            height: 300px;
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes glow {
+            0%, 100% { filter: drop-shadow(0 0 10px rgba(102, 126, 234, 0.5)); }
+            50% { filter: drop-shadow(0 0 20px rgba(102, 126, 234, 0.8)); }
+        }
+
+        @keyframes progressPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        @media (max-width: 1024px) {
+            .main-content { grid-template-columns: 1fr; }
+            .players-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎮 AI策略对战</h1>
+            <p>现代化视觉重构 - Demo预览</p>
+        </div>
+
+        <div class="panel">
+            <h2 style="margin-bottom: 24px;">⚙️ 游戏配置</h2>
+            
+            <div class="section">
+                <div class="section-title">🎯 游戏模式</div>
+                <select class="input">
+                    <option>通用模式</option>
+                    <option selected>狼人杀模式</option>
+                </select>
+            </div>
+
+            <div class="section">
+                <div class="section-title">🎭 GM配置</div>
+                <input type="text" class="input" value="https://api.openai.com/v1" placeholder="API地址">
+                <select class="input">
+                    <option>gpt-4</option>
+                    <option>claude-3-opus</option>
+                </select>
+                <input type="password" class="input" placeholder="API Key">
+            </div>
+
+            <div class="section">
+                <div class="section-title">👥 玩家配置</div>
+                <div class="players-grid">
+                    <div class="player-card">
+                        <div class="player-header">
+                            <div class="player-avatar">A</div>
+                            <div>
+                                <h4>AI-Alpha</h4>
+                                <div class="player-status">✨ 已配置</div>
+                            </div>
+                        </div>
+                        <input type="text" class="input" value="AI-Alpha">
+                        <select class="input"><option>gpt-4</option></select>
+                    </div>
+
+                    <div class="player-card">
+                        <div class="player-header">
+                            <div class="player-avatar">B</div>
+                            <div>
+                                <h4>AI-Beta</h4>
+                                <div class="player-status">✨ 已配置</div>
+                            </div>
+                        </div>
+                        <input type="text" class="input" value="AI-Beta">
+                        <select class="input"><option>gpt-4</option></select>
+                    </div>
+
+                    <div class="player-card">
+                        <div class="player-header">
+                            <div class="player-avatar">C</div>
+                            <div>
+                                <h4>AI-Gamma</h4>
+                                <div class="player-status">✨ 已配置</div>
+                            </div>
+                        </div>
+                        <input type="text" class="input" value="AI-Gamma">
+                        <select class="input"><option>claude-3-opus</option></select>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn">💾 保存配置</button>
+        </div>
+
+        <div class="control-panel">
+            <h2 style="margin-bottom: 24px;">🎮 游戏控制</h2>
+            
+            <div class="status-bar">
+                <div class="status-item">
+                    <span class="status-label">状态</span>
+                    <span class="status-value">运行中</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">回合</span>
+                    <span class="status-value">5</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill"></div>
+                </div>
+            </div>
+
+            <div class="main-content">
+                <div class="column">
+                    <h4>👥 玩家</h4>
+                    <div class="message-item">
+                        <div class="message-speaker">AI-Alpha</div>
+                        <div class="player-status">✨ 行动中</div>
+                    </div>
+                    <div class="message-item">
+                        <div class="message-speaker">AI-Beta</div>
+                        <div class="player-status waiting">⏸️ 等待中</div>
+                    </div>
+                </div>
+
+                <div class="column">
+                    <h4>📢 消息流</h4>
+                    <div class="message-item">
+                        <div class="message-speaker">🎮 GM</div>
+                        <div class="message-content">游戏开始，第一天天亮了...</div>
+                    </div>
+                    <div class="message-item">
+                        <div class="message-speaker">AI-Alpha</div>
+                        <div class="message-content">我认为Beta的行为很可疑...</div>
+                    </div>
+                    <div class="message-item">
+                        <div class="message-speaker">AI-Beta</div>
+                        <div class="message-content">我是平民，Alpha在诬陷我！</div>
+                    </div>
+                </div>
+
+                <div class="column">
+                    <h4>🎯 操作</h4>
+                    <button class="action-btn">▶️ 开始游戏</button>
+                    <button class="action-btn">⏭️ 继续游戏</button>
+                    <button class="action-btn" style="background: linear-gradient(135deg, #f44336, #e91e63);">⏹️ 停止游戏</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
