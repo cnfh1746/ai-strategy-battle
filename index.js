@@ -1206,66 +1206,61 @@ jQuery(async () => {
                 </div>
             </div>
             
-            <!-- Tab 容器 -->
-            <div class="tab-container" style="margin-bottom: 15px;">
-                <div class="tab-nav">
-                    <button class="tab-button active" data-tab="game-flow">📺 游戏流程</button>
-                    <button class="tab-button" data-tab="info-center">ℹ️ 信息中心</button>
+            <!-- 游戏消息面板 -->
+            <div class="game-messages-section" style="margin-bottom: 15px;">
+                <h4 style="margin: 0 0 10px 0; font-size: 13px; color: #FF5722;">📺 实时游戏流程</h4>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <!-- 左栏：公开消息 -->
+                    <div>
+                        <div style="font-size: 11px; color: #4CAF50; margin-bottom: 5px; font-weight: bold;">📢 公开消息</div>
+                        <div id="publicMessages" style="height: 200px; overflow-y: auto; background: var(--black30a); border: 1px solid #4CAF50; border-radius: 5px; padding: 8px; font-size: 11px;">
+                            <div style="color: #888; text-align: center; padding: 20px;">等待游戏开始...</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 右栏：私密消息 -->
+                    <div>
+                        <div style="font-size: 11px; color: #FF9800; margin-bottom: 5px; font-weight: bold;">🔒 私密消息</div>
+                        <div id="privateMessages" style="height: 200px; overflow-y: auto; background: var(--black30a); border: 1px solid #FF9800; border-radius: 5px; padding: 8px; font-size: 11px;">
+                            <div style="color: #888; text-align: center; padding: 20px;">等待私密信息...</div>
+                        </div>
+                    </div>
                 </div>
+                
+                <!-- 导出按钮 -->
+                <button id="export_history" class="menu_button" style="width: 100%; margin-top: 10px; font-size: 12px;" disabled>💾 导出完整历史到酒馆</button>
+            </div>
+            
+            <!-- 玩家状态列表 -->
+            <div class="players-section" style="margin-bottom: 15px;">
+                <h4 style="cursor: pointer; margin: 0 0 10px 0; font-size: 13px; color: #2196F3;" onclick="$('#players-list').toggle()">
+                    👥 玩家状态 <span style="font-size: 10px; color: #888;">(点击展开/收起)</span>
+                </h4>
+                <div id="players-list" style="font-size: 11px; background: var(--black30a); padding: 8px; border-radius: 5px; max-height: 150px; overflow-y: auto;">
+                    <div style="color: #888; text-align: center; padding: 10px;">游戏未开始</div>
+                </div>
+            </div>
+            
+            <!-- 最近动作记录 -->
+            <div class="actions-section" style="margin-bottom: 15px;">
+                <h4 style="cursor: pointer; margin: 0 0 10px 0; font-size: 13px; color: #FF9800;" onclick="$('#recent-actions').toggle()">
+                    📜 最近动作 <span style="font-size: 10px; color: #888;">(点击展开/收起)</span>
+                </h4>
+                <div id="recent-actions" style="font-size: 10px; background: var(--black30a); padding: 8px; border-radius: 5px; max-height: 120px; overflow-y: auto;">
+                    <div style="color: #888; text-align: center; padding: 10px;">暂无记录</div>
+                </div>
+            </div>
 
-                <!-- Tab 内容 -->
-                <div class="tab-content-wrapper" style="padding-top: 10px;">
-                    <!-- 游戏流程 Tab -->
-                    <div id="game-flow" class="tab-content active">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                            <div>
-                                <div style="font-size: 11px; color: #4CAF50; margin-bottom: 5px; font-weight: bold;">📢 公开消息</div>
-                                <div id="publicMessages" style="height: 200px; overflow-y: auto; background: var(--black30a); border-radius: 5px; padding: 8px; font-size: 11px;">
-                                    <div style="color: #888; text-align: center; padding: 20px;">等待游戏开始...</div>
-                                </div>
-                            </div>
-                            <div>
-                                <div style="font-size: 11px; color: #FF9800; margin-bottom: 5px; font-weight: bold;">🔒 私密消息</div>
-                                <div id="privateMessages" style="height: 200px; overflow-y: auto; background: var(--black30a); border-radius: 5px; padding: 8px; font-size: 11px;">
-                                    <div style="color: #888; text-align: center; padding: 20px;">等待私密信息...</div>
-                                </div>
-                            </div>
-                        </div>
-                        <button id="export_history" class="menu_button" style="width: 100%; margin-top: 10px; font-size: 12px;" disabled>💾 导出完整历史到酒馆</button>
-                    </div>
-
-                    <!-- 信息中心 Tab -->
-                    <div id="info-center" class="tab-content">
-                        <!-- 玩家状态列表 -->
-                        <div class="players-section" style="margin-bottom: 10px;">
-                            <h4 style="cursor: pointer; margin: 0 0 10px 0; font-size: 13px; color: #2196F3;" onclick="$('#players-list').toggle()">
-                                👥 玩家状态 <span style="font-size: 10px; color: #888;">(点击展开/收起)</span>
-                            </h4>
-                            <div id="players-list" style="font-size: 11px; background: var(--black30a); padding: 8px; border-radius: 5px; max-height: 150px; overflow-y: auto;">
-                                <div style="color: #888; text-align: center; padding: 10px;">游戏未开始</div>
-                            </div>
-                        </div>
-                        <!-- 最近动作记录 -->
-                        <div class="actions-section" style="margin-bottom: 10px;">
-                            <h4 style="cursor: pointer; margin: 0 0 10px 0; font-size: 13px; color: #FF9800;" onclick="$('#recent-actions').toggle()">
-                                📜 最近动作 <span style="font-size: 10px; color: #888;">(点击展开/收起)</span>
-                            </h4>
-                            <div id="recent-actions" style="font-size: 10px; background: var(--black30a); padding: 8px; border-radius: 5px; max-height: 120px; overflow-y: auto;">
-                                <div style="color: #888; text-align: center; padding: 10px;">暂无记录</div>
-                            </div>
-                        </div>
-                        <!-- GM调试区 -->
-                        <div class="gm-debug-section" style="padding: 10px; background: var(--black30a); border-radius: 8px; border-left: 3px solid #9C27B0;">
-                            <h4 style="cursor: pointer; margin: 0 0 8px 0; font-size: 13px; color: #9C27B0;" onclick="$(this).next().toggle()">🔬 GM调试信息</h4>
-                            <div id="gm-debug-info" style="font-size: 11px; line-height: 1.6; display: none;">
-                                <div>触发消息: <span id="gm-debug-trigger">-</span></div>
-                                <div>上下文长度: <span id="gm-debug-context">-</span></div>
-                                <div>GM原始回复: <span id="gm-debug-response">-</span></div>
-                                <div>解析指令: <span id="gm-debug-instruction">-</span></div>
-                                <div>秘密队列: <span id="gm-debug-secrets">-</span></div>
-                            </div>
-                        </div>
-                    </div>
+            <!-- GM调试区 -->
+            <div class="gm-debug-section" style="margin-bottom: 15px; padding: 10px; background: var(--black30a); border-radius: 8px; border-left: 3px solid #9C27B0;">
+                <h4 style="cursor: pointer; margin: 0 0 8px 0; font-size: 13px; color: #9C27B0;" onclick="$(this).next().toggle()">🔬 GM调试信息</h4>
+                <div id="gm-debug-info" style="font-size: 11px; line-height: 1.6; display: none;">
+                    <div>触发消息: <span id="gm-debug-trigger">-</span></div>
+                    <div>上下文长度: <span id="gm-debug-context">-</span></div>
+                    <div>GM原始回复: <span id="gm-debug-response">-</span></div>
+                    <div>解析指令: <span id="gm-debug-instruction">-</span></div>
+                    <div>秘密队列: <span id="gm-debug-secrets">-</span></div>
                 </div>
             </div>
             
@@ -1314,19 +1309,6 @@ jQuery(async () => {
         const content = $('#ai-battle-panel > div:not(#panel-header)');
         content.toggle();
         $(this).text(content.is(':visible') ? '−' : '+');
-    });
-
-    // Tab切换逻辑
-    $(document).on('click', '.tab-button', function() {
-        const tabId = $(this).data('tab');
-        
-        // 切换按钮active状态
-        $('.tab-button').removeClass('active');
-        $(this).addClass('active');
-        
-        // 切换内容active状态
-        $('.tab-content').removeClass('active');
-        $('#' + tabId).addClass('active');
     });
     
     // 切换大小模式
