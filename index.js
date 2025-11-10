@@ -1158,9 +1158,10 @@ jQuery(async () => {
                 <b>🎮 AI策略对战 - 通用版</b>
                 <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
             </div>
-            <div class="inline-drawer-content">${settingsHtml}</div>
+            <div class="inline-drawer-content"></div>
         </div>
     `);
+    panel.find('.inline-drawer-content').html(settingsHtml);
     $('#extensions_settings2').append(panel);
 
     // 初始化UI和事件
