@@ -1208,7 +1208,7 @@ jQuery(async () => {
             
             <!-- Tab 容器 -->
             <div class="tab-container" style="margin-bottom: 15px;">
-                <div class="tab-nav" style="display: flex; border-bottom: 1px solid var(--SmartThemeBorderColor);">
+                <div class="tab-nav">
                     <button class="tab-button active" data-tab="game-flow">📺 游戏流程</button>
                     <button class="tab-button" data-tab="info-center">ℹ️ 信息中心</button>
                 </div>
