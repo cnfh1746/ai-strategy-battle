@@ -762,10 +762,37 @@ window.addPromptLog = function(aiName, prompt, response) {
     $('#prompt-logs').prepend(logHtml);
 };
 
-// ==================== UI函数 ====================
+// ==================== UI函数 (重构版) ====================
+
+// 动态生成玩家配置UI
+function initPlayerConfigs() {
+    const container = $('#players_config_container');
+    const template = $('#player_config_template').html();
+    container.empty();
+
+    for (let i = 1; i <= 6; i++) {
+        const playerHtml = template.replace(/{PLAYER_NUM}/g, i);
+        container.append(playerHtml);
+    }
+    console.log('[AI对战] 玩家配置UI已生成');
+}
+
+// 根据游戏模式显示/隐藏相关设置
+function toggleGameModeSettings() {
+    const gameMode = $('#game_mode').val();
+    if (gameMode === 'werewolf') {
+        $('#gm_system_prompt_section').hide();
+        $('#commentator_section').show();
+    } else {
+        $('#gm_system_prompt_section').show();
+        $('#commentator_section').hide();
+    }
+    console.log(`[AI对战] 切换到 ${gameMode} 模式`);
+}
+
 function loadSettings() {
     if (!extension_settings[extensionName]) {
-        extension_settings[extensionName] = defaultSettings;
+        extension_settings[extensionName] = { ...defaultSettings };
     }
     const settings = extension_settings[extensionName];
     
@@ -775,10 +802,11 @@ function loadSettings() {
     // 加载 GM 系统提示词
     $('#gm_system_prompt').val(settings.gmSystemPrompt || defaultSettings.gmSystemPrompt);
 
-    // ⭐ 新增：加载 GM API 配置
+    // 加载 GM API 配置
     $('#gm_api_url').val(settings.gmApiUrl || '');
     $('#gm_api_key').val(settings.gmApiKey || '');
-    $('#gm_model').val(settings.gmModel || 'gpt-4');
+    // 模型需要先拉取，这里只设置初始值
+    $('#gm_model').empty().append(`<option value="${settings.gmModel || 'gpt-4'}">${settings.gmModel || 'gpt-4'}</option>`);
 
     // 加载解说员配置
     $('#commentatorEnabled').prop('checked', settings.commentatorEnabled || false);
@@ -786,70 +814,63 @@ function loadSettings() {
 
     // 加载玩家配置
     settings.players.forEach((player, i) => {
-        $(`#player${i + 1}_name`).val(player.name);
-        $(`#player${i + 1}_api_url`).val(player.apiUrl || '');
-        $(`#player${i + 1}_api_key`).val(player.apiKey);
-        $(`#player${i + 1}_model`).val(player.model);
-        $(`#player${i + 1}_custom_prompt`).val(player.customPrompt || '');
+        const playerNum = i + 1;
+        $(`#player${playerNum}_name`).val(player.name);
+        $(`#player${playerNum}_api_url`).val(player.apiUrl || '');
+        $(`#player${playerNum}_api_key`).val(player.apiKey);
+        $(`#player${playerNum}_model`).empty().append(`<option value="${player.model}">${player.model}</option>`);
+        $(`#player${playerNum}_custom_prompt`).val(player.customPrompt || '');
     });
+
+    // 应用模式切换的显示逻辑
+    toggleGameModeSettings();
 }
 
 function saveSettings() {
     const settings = extension_settings[extensionName];
     
-    // 保存游戏模式
     settings.gameMode = $('#game_mode').val();
-    
-    // 保存 GM 系统提示词
     settings.gmSystemPrompt = $('#gm_system_prompt').val();
-
-    // ⭐ 新增：保存 GM API 配置
     settings.gmApiUrl = $('#gm_api_url').val();
     settings.gmApiKey = $('#gm_api_key').val();
     settings.gmModel = $('#gm_model').val();
-
-    // 保存解说员配置
     settings.commentatorEnabled = $('#commentatorEnabled').prop('checked');
     settings.commentatorStyle = $('#commentatorStyle').val().trim();
 
-    // 保存玩家配置
-    settings.players.forEach((player, i) => {
-        player.name = $(`#player${i + 1}_name`).val();
-        player.apiUrl = $(`#player${i + 1}_api_url`).val() || '';
-        player.apiKey = $(`#player${i + 1}_api_key`).val();
-        player.model = $(`#player${i + 1}_model`).val();
-        player.customPrompt = $(`#player${i + 1}_custom_prompt`).val() || '';
-    });
+    settings.players = [];
+    for (let i = 1; i <= 6; i++) {
+        settings.players.push({
+            id: `p${i}`,
+            name: $(`#player${i}_name`).val(),
+            apiUrl: $(`#player${i}_api_url`).val() || '',
+            apiKey: $(`#player${i}_api_key`).val(),
+            model: $(`#player${i}_model`).val(),
+            customPrompt: $(`#player${i}_custom_prompt`).val() || ''
+        });
+    }
     
     saveSettingsDebounced();
     toastr.success('设置已保存', 'AI对战');
 }
 
-// 拉取 GM 可用模型列表
-async function fetchGmModels() {
-    const apiUrl = $('#gm_api_url').val();
-    const apiKey = $('#gm_api_key').val();
-    
+// 拉取模型列表通用函数
+async function fetchModels(apiUrl, apiKey, selectElement, buttonElement) {
     if (!apiUrl || !apiKey) {
-        toastr.warning('请先填写 GM 的 API 地址和密钥', 'AI对战');
+        toastr.warning('请先填写对应的 API 地址和密钥', 'AI对战');
         return;
     }
     
-    const button = $('#fetch_gm_models');
-    button.prop('disabled', true).text('⏳ 拉取中...');
+    const originalButtonText = buttonElement.text();
+    buttonElement.prop('disabled', true).text('⏳');
     
     try {
         const modelsUrl = apiUrl.replace(/\/$/, '') + '/models';
         const response = await fetch(modelsUrl, {
             method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${apiKey}`
-            }
+            headers: { 'Authorization': `Bearer ${apiKey}` }
         });
         
-        if (!response.ok) {
-            throw new Error(`API错误 ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`API错误 ${response.status}`);
         
         const data = await response.json();
         const models = data.data || data.models || [];
@@ -859,28 +880,65 @@ async function fetchGmModels() {
             return;
         }
         
-        // 更新下拉列表
-        const select = $('#gm_model');
-        const currentValue = select.val();
-        select.empty();
+        const currentValue = selectElement.val();
+        selectElement.empty();
         
         models.forEach(model => {
             const modelId = model.id || model;
-            select.append(`<option value="${modelId}">${modelId}</option>`);
+            selectElement.append(`<option value="${modelId}">${modelId}</option>`);
         });
         
-        // 恢复之前的选择（如果存在）
         if (models.find(m => (m.id || m) === currentValue)) {
-            select.val(currentValue);
+            selectElement.val(currentValue);
         }
         
         toastr.success(`已加载 ${models.length} 个模型`, 'AI对战');
         
     } catch (error) {
-        console.error('[AI对战] 拉取 GM 模型失败:', error);
+        console.error('[AI对战] 拉取模型失败:', error);
         toastr.error(`拉取模型失败: ${error.message}`, 'AI对战');
     } finally {
-        button.prop('disabled', false).text('🔄 拉取');
+        buttonElement.prop('disabled', false).text(originalButtonText);
+    }
+}
+
+// 测试API连接通用函数
+async function testApiConnection(apiUrl, apiKey, model, buttonElement) {
+    if (!apiUrl || !apiKey || !model) {
+        toastr.warning('请先填写 API 地址、密钥并选择一个模型', 'AI对战');
+        return;
+    }
+
+    const originalButtonText = buttonElement.text();
+    buttonElement.prop('disabled', true).text('⏳');
+
+    try {
+        const testUrl = apiUrl.replace(/\/$/, '') + '/chat/completions';
+        const response = await fetch(testUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+                model: model,
+                messages: [{ role: 'user', content: 'Test' }],
+                max_tokens: 1
+            })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`API返回错误 ${response.status}: ${errorText.substring(0, 100)}`);
+        }
+        
+        toastr.success('API 连接成功！', 'AI对战');
+
+    } catch (error) {
+        console.error('[AI对战] API测试失败:', error);
+        toastr.error(`API 测试失败: ${error.message}`, 'AI对战');
+    } finally {
+        buttonElement.prop('disabled', false).text(originalButtonText);
     }
 }
 
@@ -1104,7 +1162,28 @@ jQuery(async () => {
         </div>
     `);
     $('#extensions_settings2').append(panel);
+
+    // 初始化UI和事件
+    initPlayerConfigs();
     loadSettings();
+    
+    // 绑定事件
+    $(document).on('change', '#game_mode', toggleGameModeSettings);
+    $(document).on('click', '#save_battle_settings', saveSettings);
+    
+    // 绑定GM和玩家的按钮事件
+    $(document).on('click', '#fetch_gm_models', function() {
+        fetchModels($('#gm_api_url').val(), $('#gm_api_key').val(), $('#gm_model'), $(this));
+    });
+
+    for (let i = 1; i <= 6; i++) {
+        $(document).on('click', `#fetch_player${i}_models`, function() {
+            fetchModels($(`#player${i}_api_url`).val(), $(`#player${i}_api_key`).val(), $(`#player${i}_model`), $(this));
+        });
+        $(document).on('click', `#test_player${i}_api`, function() {
+            testApiConnection($(`#player${i}_api_url`).val(), $(`#player${i}_api_key`).val(), $(`#player${i}_model`).val(), $(this));
+        });
+    }
     
     // 创建浮动控制面板
     const floatingPanel = $(`
@@ -1218,14 +1297,12 @@ jQuery(async () => {
     // 显示面板
     setTimeout(() => $('#ai-battle-panel').fadeIn(), 500);
     
-    // 绑定事件
-    $(document).on('click', '#save_battle_settings', saveSettings);
+    // 绑定浮动面板事件
     $(document).on('click', '#start_game', startGame);
     $(document).on('click', '#continue_game', continueGame);
     $(document).on('click', '#stop_game', stopGame);
     $(document).on('click', '#send-interview', sendInterview);
-    $(document).on('click', '#fetch_gm_models', fetchGmModels);  // ⭐ 新增
-    $(document).on('click', '#export_history', exportGameHistoryToTavern); // 导出历史
+    $(document).on('click', '#export_history', exportGameHistoryToTavern);
     
     // 折叠/展开面板
     $(document).on('click', '#toggle-panel', function() {
