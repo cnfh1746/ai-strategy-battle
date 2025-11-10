@@ -1151,26 +1151,17 @@ ${gameEngine.getChatContext()}
 // ==================== 初始化 ====================
 jQuery(async () => {
     // 加载设置页面
+    const settingsHtml = await $.get(`${extensionFolderPath}settings.html`);
     const panel = $(`
         <div class="inline-drawer">
             <div class="inline-drawer-toggle inline-drawer-header">
                 <b>🎮 AI策略对战 - 通用版</b>
                 <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
             </div>
-            <div class="inline-drawer-content">
-                <!-- 内容将在这里加载 -->
-                <p>正在加载设置...</p>
-            </div>
+            <div class="inline-drawer-content">${settingsHtml}</div>
         </div>
     `);
     $('#extensions_settings2').append(panel);
-
-    // 异步加载并插入HTML内容
-    $.get(`${extensionFolderPath}ui.html`).done(function(settingsHtml) {
-        panel.find('.inline-drawer-content').html(settingsHtml);
-    }).fail(function() {
-        panel.find('.inline-drawer-content').html('<p style="color: red;">错误：无法加载设置界面。</p>');
-    });
 
     // 初始化UI和事件
     initPlayerConfigs();
